@@ -232,10 +232,10 @@ export const OnboardingFlow = ({ onComplete }: OnboardingFlowProps) => {
                         <Input
                           type="number"
                           min="0"
-                          value={data.goals.smoking?.targetAmount || ''}
+                          value={data.goals.smoking?.targetAmount ?? ''}
                           onChange={(e) => updateGoal('smoking', {
                             ...data.goals.smoking,
-                            targetAmount: parseInt(e.target.value) || 0
+                            targetAmount: e.target.value === '' ? 0 : parseInt(e.target.value)
                           })}
                           placeholder="e.g., 0"
                           className="mt-1"
