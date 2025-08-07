@@ -1,10 +1,13 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Heart, CheckCircle, MessageSquare, Target, TrendingUp, Calendar } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
 
 const moodEmojis = [
   { value: 1, emoji: "😢", label: "Very Bad", color: "text-red-500" },
@@ -15,32 +18,134 @@ const moodEmojis = [
 ];
 
 export const CheckinPage = () => {
+  const { user } = useAuth();
   const [selectedMood, setSelectedMood] = useState<number | null>(null);
   const [progressNotes, setProgressNotes] = useState("");
   const [goalsAchieved, setGoalsAchieved] = useState("");
   const [challengesFaced, setChallengesFaced] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [currentStreak, setCurrentStreak] = useState(0);
+  const [moodData, setMoodData] = useState<number[]>([]);
 
-  const currentStreak = 7;
-  const moodData = [3, 4, 3, 5, 4, 4, 4]; // Last 7 days
+  useEffect(() => {
+    if (user) {
+      loadStreakData();
+      loadRecentMoodData();
+    }
+  }, [user]);
+
+  const loadStreakData = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('streaks')
+        .select('current_count')
+        .eq('user_id', user.id)
+        .eq('streak_type', 'daily_checkin')
+        .single();
+
+      if (error && error.code !== 'PGRST116') throw error;
+      setCurrentStreak(data?.current_count || 0);
+    } catch (error) {
+      console.error('Error loading streak data:', error);
+    }
+  };
+
+  const loadRecentMoodData = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('check_ins')
+        .select('mood')
+        .eq('user_id', user.id)
+        .not('mood', 'is', null)
+        .order('created_at', { ascending: false })
+        .limit(7);
+
+      if (error) throw error;
+      setMoodData(data?.map(d => d.mood).reverse() || []);
+    } catch (error) {
+      console.error('Error loading mood data:', error);
+    }
+  };
 
   const handleSubmit = async () => {
-    if (!selectedMood || !progressNotes.trim() || !goalsAchieved.trim() || !challengesFaced.trim()) {
+    if (!selectedMood || !progressNotes.trim() || !goalsAchieved.trim() || !challengesFaced.trim() || !user) {
       return;
     }
     
-    setIsSubmitting(true);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    setIsSubmitting(false);
-    
-    // Reset form
-    setSelectedMood(null);
-    setProgressNotes("");
-    setGoalsAchieved("");
-    setChallengesFaced("");
-    
-    // Show success feedback (will implement with toast later)
+    try {
+      setIsSubmitting(true);
+      
+      // Save check-in
+      const { error: checkinError } = await supabase
+        .from('check_ins')
+        .insert({
+          user_id: user.id,
+          mood: selectedMood,
+          progress_notes: progressNotes.trim(),
+          goals_achieved: goalsAchieved.trim(),
+          challenges: challengesFaced.trim(),
+          date: new Date().toISOString().split('T')[0]
+        });
+
+      if (checkinError) throw checkinError;
+
+      // Update streak
+      const { data: streakData } = await supabase
+        .from('streaks')
+        .select('current_count, best_count, last_updated')
+        .eq('user_id', user.id)
+        .eq('streak_type', 'daily_checkin')
+        .single();
+
+      const today = new Date().toISOString().split('T')[0];
+      const lastUpdated = streakData?.last_updated;
+      
+      let newCount = 1;
+      if (lastUpdated && lastUpdated !== today) {
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        const yesterdayStr = yesterday.toISOString().split('T')[0];
+        
+        if (lastUpdated === yesterdayStr) {
+          newCount = (streakData?.current_count || 0) + 1;
+        }
+      } else if (lastUpdated === today) {
+        newCount = streakData?.current_count || 1;
+      }
+
+      const { error: streakError } = await supabase
+        .from('streaks')
+        .update({
+          current_count: newCount,
+          best_count: Math.max(newCount, streakData?.best_count || 0),
+          last_updated: today
+        })
+        .eq('user_id', user.id)
+        .eq('streak_type', 'daily_checkin');
+
+      if (streakError) throw streakError;
+
+      setCurrentStreak(newCount);
+      toast.success("Check-in completed successfully!");
+      
+      // Reset form
+      setSelectedMood(null);
+      setProgressNotes("");
+      setGoalsAchieved("");
+      setChallengesFaced("");
+      
+      // Reload mood data
+      loadRecentMoodData();
+    } catch (error) {
+      console.error('Error saving check-in:', error);
+      toast.error("Failed to save check-in. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const isFormValid = selectedMood && progressNotes.trim() && goalsAchieved.trim() && challengesFaced.trim();

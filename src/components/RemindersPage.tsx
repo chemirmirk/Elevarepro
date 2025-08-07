@@ -1,10 +1,13 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Bell, Plus, Clock, Zap, Edit, Trash2, BrainCircuit } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
 
 interface Reminder {
   id: string;
@@ -61,7 +64,8 @@ const reminderTypes = {
 };
 
 export const RemindersPage = () => {
-  const [reminders, setReminders] = useState<Reminder[]>(mockReminders);
+  const { user } = useAuth();
+  const [reminders, setReminders] = useState<Reminder[]>([]);
   const [showAddForm, setShowAddForm] = useState(false);
   const [newReminder, setNewReminder] = useState({
     title: '',
@@ -70,45 +74,172 @@ export const RemindersPage = () => {
     type: 'motivational' as Reminder['type']
   });
 
-  const toggleReminder = (id: string) => {
-    setReminders(prev => prev.map(reminder => 
-      reminder.id === id ? { ...reminder, isActive: !reminder.isActive } : reminder
-    ));
+  useEffect(() => {
+    if (user) {
+      loadReminders();
+    }
+  }, [user]);
+
+  const loadReminders = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('reminders')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('time', { ascending: true });
+
+      if (error) throw error;
+      
+      const loadedReminders: Reminder[] = data.map(reminder => ({
+        id: reminder.id,
+        title: reminder.title,
+        message: reminder.message,
+        time: reminder.time,
+        isActive: reminder.is_active,
+        type: reminder.reminder_type as Reminder['type'],
+        isAiGenerated: reminder.is_ai_generated
+      }));
+
+      setReminders(loadedReminders);
+    } catch (error) {
+      console.error('Error loading reminders:', error);
+    }
   };
 
-  const deleteReminder = (id: string) => {
-    setReminders(prev => prev.filter(reminder => reminder.id !== id));
+  const toggleReminder = async (id: string) => {
+    if (!user) return;
+    
+    const reminder = reminders.find(r => r.id === id);
+    if (!reminder) return;
+    
+    try {
+      const { error } = await supabase
+        .from('reminders')
+        .update({ is_active: !reminder.isActive })
+        .eq('id', id)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+      
+      setReminders(prev => prev.map(r => 
+        r.id === id ? { ...r, isActive: !r.isActive } : r
+      ));
+      
+      toast.success(`Reminder ${!reminder.isActive ? 'enabled' : 'disabled'}`);
+    } catch (error) {
+      console.error('Error toggling reminder:', error);
+      toast.error("Failed to update reminder");
+    }
   };
 
-  const addReminder = () => {
-    if (!newReminder.title.trim() || !newReminder.message.trim() || !newReminder.time) {
+  const deleteReminder = async (id: string) => {
+    if (!user) return;
+    
+    try {
+      const { error } = await supabase
+        .from('reminders')
+        .delete()
+        .eq('id', id)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+      
+      setReminders(prev => prev.filter(reminder => reminder.id !== id));
+      toast.success("Reminder deleted");
+    } catch (error) {
+      console.error('Error deleting reminder:', error);
+      toast.error("Failed to delete reminder");
+    }
+  };
+
+  const addReminder = async () => {
+    if (!newReminder.title.trim() || !newReminder.message.trim() || !newReminder.time || !user) {
       return;
     }
 
-    const reminder: Reminder = {
-      id: Date.now().toString(),
-      ...newReminder,
-      isActive: true
-    };
+    try {
+      const { data, error } = await supabase
+        .from('reminders')
+        .insert({
+          user_id: user.id,
+          title: newReminder.title.trim(),
+          message: newReminder.message.trim(),
+          time: newReminder.time,
+          reminder_type: newReminder.type,
+          is_active: true,
+          is_ai_generated: false
+        })
+        .select()
+        .single();
 
-    setReminders(prev => [...prev, reminder].sort((a, b) => a.time.localeCompare(b.time)));
-    setNewReminder({ title: '', message: '', time: '', type: 'motivational' });
-    setShowAddForm(false);
+      if (error) throw error;
+      
+      const reminder: Reminder = {
+        id: data.id,
+        title: data.title,
+        message: data.message,
+        time: data.time,
+        isActive: data.is_active,
+        type: data.reminder_type as Reminder['type'],
+        isAiGenerated: data.is_ai_generated
+      };
+
+      setReminders(prev => [...prev, reminder].sort((a, b) => a.time.localeCompare(b.time)));
+      setNewReminder({ title: '', message: '', time: '', type: 'motivational' });
+      setShowAddForm(false);
+      toast.success("Reminder created successfully!");
+    } catch (error) {
+      console.error('Error adding reminder:', error);
+      toast.error("Failed to create reminder");
+    }
   };
 
-  const generateAIReminders = () => {
-    // Simulate AI generation
-    const aiReminder: Reminder = {
-      id: Date.now().toString(),
-      title: 'AI Smart Reminder',
-      message: 'Based on your recent check-ins, you seem to struggle with afternoon motivation. Remember: every small step counts toward your bigger goal!',
-      time: '15:30',
-      isActive: true,
-      type: 'motivational',
-      isAiGenerated: true
-    };
+  const generateAIReminders = async () => {
+    if (!user) return;
     
-    setReminders(prev => [...prev, aiReminder].sort((a, b) => a.time.localeCompare(b.time)));
+    try {
+      // Simulate AI generation based on user data
+      const aiReminder = {
+        title: 'AI Smart Reminder',
+        message: 'Based on your recent check-ins, you seem to struggle with afternoon motivation. Remember: every small step counts toward your bigger goal!',
+        time: '15:30',
+        type: 'motivational' as Reminder['type']
+      };
+      
+      const { data, error } = await supabase
+        .from('reminders')
+        .insert({
+          user_id: user.id,
+          title: aiReminder.title,
+          message: aiReminder.message,
+          time: aiReminder.time,
+          reminder_type: aiReminder.type,
+          is_active: true,
+          is_ai_generated: true
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      
+      const reminder: Reminder = {
+        id: data.id,
+        title: data.title,
+        message: data.message,
+        time: data.time,
+        isActive: data.is_active,
+        type: data.reminder_type as Reminder['type'],
+        isAiGenerated: data.is_ai_generated
+      };
+      
+      setReminders(prev => [...prev, reminder].sort((a, b) => a.time.localeCompare(b.time)));
+      toast.success("AI reminder generated successfully!");
+    } catch (error) {
+      console.error('Error generating AI reminder:', error);
+      toast.error("Failed to generate AI reminder");
+    }
   };
 
   const activeReminders = reminders.filter(r => r.isActive).length;

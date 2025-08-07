@@ -6,6 +6,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { CheckCircle, Target, Dumbbell, Cigarette, ArrowRight, ArrowLeft } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
 
 interface OnboardingData {
   challenges: string[];
@@ -28,7 +31,9 @@ const challenges = [
 ];
 
 export const OnboardingFlow = ({ onComplete }: OnboardingFlowProps) => {
+  const { user } = useAuth();
   const [currentStep, setCurrentStep] = useState(1);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [data, setData] = useState<OnboardingData>({
     challenges: [],
     goals: {},
@@ -59,11 +64,40 @@ export const OnboardingFlow = ({ onComplete }: OnboardingFlowProps) => {
     }));
   };
 
+  const saveOnboardingData = async () => {
+    if (!user) return;
+    
+    try {
+      setIsSubmitting(true);
+      
+      const { error } = await supabase
+        .from('onboarding_data')
+        .insert({
+          user_id: user.id,
+          challenges: data.challenges,
+          goals: data.goals,
+          motivation: data.motivation,
+          previous_attempts: data.previousAttempts,
+          current_habits: data.currentHabits
+        });
+
+      if (error) throw error;
+      
+      toast.success("Onboarding completed successfully!");
+      onComplete(data);
+    } catch (error) {
+      console.error('Error saving onboarding data:', error);
+      toast.error("Failed to save onboarding data. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const nextStep = () => {
     if (currentStep < totalSteps) {
       setCurrentStep(currentStep + 1);
     } else {
-      onComplete(data);
+      saveOnboardingData();
     }
   };
 
@@ -332,10 +366,10 @@ export const OnboardingFlow = ({ onComplete }: OnboardingFlowProps) => {
 
             <Button
               onClick={nextStep}
-              disabled={!canProceed()}
+              disabled={!canProceed() || isSubmitting}
               className="flex items-center gap-2 gradient-primary shadow-primary text-white"
             >
-              {currentStep === totalSteps ? 'Complete Setup' : 'Next'}
+              {isSubmitting ? 'Saving...' : currentStep === totalSteps ? 'Complete Setup' : 'Next'}
               <ArrowRight className="h-4 w-4" />
             </Button>
           </div>

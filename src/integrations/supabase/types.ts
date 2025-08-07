@@ -176,6 +176,42 @@ export type Database = {
         }
         Relationships: []
       }
+      onboarding_data: {
+        Row: {
+          challenges: string[]
+          created_at: string
+          current_habits: string
+          goals: Json
+          id: string
+          motivation: string
+          previous_attempts: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          challenges?: string[]
+          created_at?: string
+          current_habits: string
+          goals?: Json
+          id?: string
+          motivation: string
+          previous_attempts: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          challenges?: string[]
+          created_at?: string
+          current_habits?: string
+          goals?: Json
+          id?: string
+          motivation?: string
+          previous_attempts?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -195,6 +231,45 @@ export type Database = {
           created_at?: string
           id?: string
           name?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      reminders: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          is_ai_generated: boolean
+          message: string
+          reminder_type: string
+          time: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_ai_generated?: boolean
+          message: string
+          reminder_type: string
+          time: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_ai_generated?: boolean
+          message?: string
+          reminder_type?: string
+          time?: string
+          title?: string
           updated_at?: string
           user_id?: string
         }

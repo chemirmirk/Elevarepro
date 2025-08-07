@@ -4,6 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { MessageCircle, Send, Bot, User, Zap, Heart, Target } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
 
 interface ChatMessage {
   id: string;
@@ -32,10 +35,76 @@ const aiSuggestions = [
 ];
 
 export const ChatPage = () => {
-  const [messages, setMessages] = useState<ChatMessage[]>(mockMessages);
+  const { user } = useAuth();
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputMessage, setInputMessage] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (user) {
+      loadChatHistory();
+    }
+  }, [user]);
+
+  const loadChatHistory = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('chat_messages')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+      
+      const loadedMessages: ChatMessage[] = data.map(msg => ({
+        id: msg.id,
+        content: msg.content,
+        sender: msg.sender as 'user' | 'ai',
+        timestamp: new Date(msg.created_at),
+        type: msg.message_type as ChatMessage['type']
+      }));
+
+      if (loadedMessages.length === 0) {
+        setMessages(mockMessages);
+        // Save the initial welcome message
+        await supabase
+          .from('chat_messages')
+          .insert({
+            user_id: user.id,
+            content: mockMessages[0].content,
+            sender: 'ai',
+            message_type: 'motivation'
+          });
+      } else {
+        setMessages(loadedMessages);
+      }
+    } catch (error) {
+      console.error('Error loading chat history:', error);
+      setMessages(mockMessages);
+    }
+  };
+
+  const saveMessage = async (message: ChatMessage) => {
+    if (!user) return;
+    
+    try {
+      const { error } = await supabase
+        .from('chat_messages')
+        .insert({
+          user_id: user.id,
+          content: message.content,
+          sender: message.sender,
+          message_type: message.type || 'text'
+        });
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error saving message:', error);
+    }
+  };
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -58,9 +127,12 @@ export const ChatPage = () => {
     setMessages(prev => [...prev, userMessage]);
     setInputMessage("");
     setIsTyping(true);
+    
+    // Save user message
+    await saveMessage(userMessage);
 
     // Simulate AI response
-    setTimeout(() => {
+    setTimeout(async () => {
       const aiResponse = generateAIResponse(content);
       const aiMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
@@ -72,6 +144,9 @@ export const ChatPage = () => {
       
       setMessages(prev => [...prev, aiMessage]);
       setIsTyping(false);
+      
+      // Save AI message
+      await saveMessage(aiMessage);
     }, 1500);
   };
 
