@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Calendar, Plus, CheckCircle, Clock, Target, TrendingUp } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 interface ScheduledActivity {
   id: string;
@@ -15,45 +17,6 @@ interface ScheduledActivity {
   isRecurring: boolean;
 }
 
-const mockActivities: ScheduledActivity[] = [
-  {
-    id: '1',
-    title: 'Morning Gym Session',
-    date: '2024-01-15',
-    time: '07:00',
-    type: 'gym',
-    isCompleted: true,
-    isRecurring: true
-  },
-  {
-    id: '2',
-    title: 'Meditation Practice',
-    date: '2024-01-15',
-    time: '08:30',
-    type: 'meditation',
-    isCompleted: true,
-    isRecurring: true
-  },
-  {
-    id: '3',
-    title: 'Evening Workout',
-    date: '2024-01-16',
-    time: '18:00',
-    type: 'gym',
-    isCompleted: false,
-    isRecurring: true
-  },
-  {
-    id: '4',
-    title: '30-Day Milestone',
-    date: '2024-01-20',
-    time: '00:00',
-    type: 'milestone',
-    isCompleted: false,
-    isRecurring: false
-  }
-];
-
 const activityTypes = {
   gym: { label: 'Gym', color: 'bg-primary/10 text-primary', icon: '🏋️' },
   meditation: { label: 'Meditation', color: 'bg-secondary/10 text-secondary', icon: '🧘' },
@@ -62,23 +25,107 @@ const activityTypes = {
 };
 
 export const CalendarPage = () => {
-  const [activities, setActivities] = useState<ScheduledActivity[]>(mockActivities);
+  const { user } = useAuth();
+  const [activities, setActivities] = useState<ScheduledActivity[]>([]);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [weeklyGoal, setWeeklyGoal] = useState(5);
+  const [completedThisWeek, setCompletedThisWeek] = useState(0);
+
+  useEffect(() => {
+    if (user) {
+      loadActivities();
+      loadWeeklyProgress();
+    }
+  }, [user]);
+
+  const loadActivities = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('activities')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('date', { ascending: true });
+
+      if (error) throw error;
+      
+      setActivities(data?.map(activity => ({
+        id: activity.id,
+        title: activity.title,
+        date: activity.date,
+        time: activity.time || '00:00',
+        type: activity.activity_type as 'gym' | 'meditation' | 'milestone' | 'other',
+        isCompleted: activity.is_completed || false,
+        isRecurring: activity.is_recurring || false
+      })) || []);
+    } catch (error) {
+      console.error('Error loading activities:', error);
+    }
+  };
+
+  const loadWeeklyProgress = async () => {
+    if (!user) return;
+    
+    try {
+      const startOfWeek = new Date();
+      startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
+      
+      const { data: weeklyData } = await supabase
+        .from('activities')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('is_completed', true)
+        .gte('date', startOfWeek.toISOString().split('T')[0]);
+
+      setCompletedThisWeek(weeklyData?.length || 0);
+
+      // Load weekly goal
+      const { data: goalData } = await supabase
+        .from('goals')
+        .select('target_amount')
+        .eq('user_id', user.id)
+        .eq('goal_type', 'weekly_exercise')
+        .eq('is_active', true)
+        .single();
+
+      if (goalData?.target_amount) {
+        setWeeklyGoal(goalData.target_amount);
+      }
+    } catch (error) {
+      console.error('Error loading weekly progress:', error);
+    }
+  };
   
-  const toggleActivity = (id: string) => {
-    setActivities(prev => prev.map(activity => 
-      activity.id === id ? { ...activity, isCompleted: !activity.isCompleted } : activity
-    ));
+  const toggleActivity = async (id: string) => {
+    const activity = activities.find(a => a.id === id);
+    if (!activity) return;
+
+    const newCompletionStatus = !activity.isCompleted;
+    
+    try {
+      const { error } = await supabase
+        .from('activities')
+        .update({ is_completed: newCompletionStatus })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setActivities(prev => prev.map(activity => 
+        activity.id === id ? { ...activity, isCompleted: newCompletionStatus } : activity
+      ));
+
+      // Reload weekly progress
+      await loadWeeklyProgress();
+    } catch (error) {
+      console.error('Error updating activity:', error);
+    }
   };
 
   const todayActivities = activities.filter(a => a.date === selectedDate);
   const completedToday = todayActivities.filter(a => a.isCompleted).length;
   const completionRate = todayActivities.length > 0 ? (completedToday / todayActivities.length) * 100 : 0;
-
-  // Mock weekly stats
-  const weeklyGoal = 5;
-  const completedThisWeek = 4;
-  const weeklyProgress = (completedThisWeek / weeklyGoal) * 100;
+  const weeklyProgress = weeklyGoal > 0 ? (completedThisWeek / weeklyGoal) * 100 : 0;
 
   return (
     <div className="p-4 pb-24 space-y-6 max-w-md mx-auto">

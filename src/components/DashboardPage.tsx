@@ -13,11 +13,13 @@ export const DashboardPage = () => {
   const [weeklyGoal, setWeeklyGoal] = useState(5);
   const [completedThisWeek, setCompletedThisWeek] = useState(0);
   const [achievements, setAchievements] = useState<any[]>([]);
+  const [todayActivities, setTodayActivities] = useState<any[]>([]);
   const progressPercentage = weeklyGoal > 0 ? (completedThisWeek / weeklyGoal) * 100 : 0;
 
   useEffect(() => {
     if (user) {
       loadUserData();
+      loadTodayActivities();
     }
   }, [user]);
 
@@ -71,6 +73,25 @@ export const DashboardPage = () => {
       }
     } catch (error) {
       console.error('Error loading dashboard data:', error);
+    }
+  };
+
+  const loadTodayActivities = async () => {
+    if (!user) return;
+    
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const { data, error } = await supabase
+        .from('activities')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('date', today);
+
+      if (error) throw error;
+      
+      setTodayActivities(data || []);
+    } catch (error) {
+      console.error('Error loading today activities:', error);
     }
   };
 
@@ -165,23 +186,32 @@ export const DashboardPage = () => {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-            <div className="flex items-center gap-3">
-              <div className="w-4 h-4 rounded-full border-2 border-primary"></div>
-              <span className="font-medium">Go to gym</span>
+          {todayActivities.length === 0 ? (
+            <div className="text-center py-4">
+              <p className="text-sm text-muted-foreground">No goals set for today</p>
+              <p className="text-xs text-muted-foreground mt-1">Add some activities to get started!</p>
             </div>
-            <Badge variant="outline">Pending</Badge>
-          </div>
-          
-          <div className="flex items-center justify-between p-3 bg-success/10 rounded-lg">
-            <div className="flex items-center gap-3">
-              <div className="w-4 h-4 rounded-full bg-success flex items-center justify-center">
-                <div className="w-2 h-2 bg-white rounded-full"></div>
+          ) : (
+            todayActivities.map((activity) => (
+              <div key={activity.id} className={`flex items-center justify-between p-3 rounded-lg ${
+                activity.isCompleted ? 'bg-success/10' : 'bg-muted/50'
+              }`}>
+                <div className="flex items-center gap-3">
+                  <div className={`w-4 h-4 rounded-full ${
+                    activity.isCompleted 
+                      ? 'bg-success flex items-center justify-center' 
+                      : 'border-2 border-primary'
+                  }`}>
+                    {activity.isCompleted && <div className="w-2 h-2 bg-white rounded-full"></div>}
+                  </div>
+                  <span className="font-medium">{activity.title}</span>
+                </div>
+                <Badge className={activity.isCompleted ? 'bg-success text-success-foreground' : ''} variant={activity.isCompleted ? 'default' : 'outline'}>
+                  {activity.isCompleted ? 'Complete' : 'Pending'}
+                </Badge>
               </div>
-              <span className="font-medium">Morning meditation</span>
-            </div>
-            <Badge className="bg-success text-success-foreground">Complete</Badge>
-          </div>
+            ))
+          )}
         </CardContent>
       </Card>
 
@@ -195,15 +225,24 @@ export const DashboardPage = () => {
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            <div className="flex items-center gap-3 p-3 bg-warning/10 rounded-lg">
-              <div className="p-2 bg-warning/20 rounded-full">
-                <Flame className="h-4 w-4 text-warning" />
+            {achievements.length === 0 ? (
+              <div className="text-center py-4">
+                <p className="text-sm text-muted-foreground">No achievements yet</p>
+                <p className="text-xs text-muted-foreground mt-1">Keep working towards your goals!</p>
               </div>
-              <div>
-                <p className="font-medium">7-Day Streak!</p>
-                <p className="text-sm text-muted-foreground">Completed check-ins for a week straight</p>
-              </div>
-            </div>
+            ) : (
+              achievements.map((achievement) => (
+                <div key={achievement.id} className="flex items-center gap-3 p-3 bg-warning/10 rounded-lg">
+                  <div className="p-2 bg-warning/20 rounded-full">
+                    <Award className="h-4 w-4 text-warning" />
+                  </div>
+                  <div>
+                    <p className="font-medium">{achievement.title}</p>
+                    <p className="text-sm text-muted-foreground">{achievement.description}</p>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </CardContent>
       </Card>
