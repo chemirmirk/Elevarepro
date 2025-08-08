@@ -67,7 +67,7 @@ export const PhotosPage = () => {
     if (!user) return;
     
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('progress_photos')
         .select('*')
         .eq('user_id', user.id)
@@ -75,7 +75,7 @@ export const PhotosPage = () => {
 
       if (error) throw error;
       
-      setPhotos(data?.map(photo => ({
+      setPhotos(data?.map((photo: any) => ({
         id: photo.id,
         imageUrl: photo.image_url,
         date: photo.date,

@@ -62,8 +62,8 @@ export const PhotoUpload = ({ onPhotoAdded, onClose }: PhotoUploadProps) => {
         .from('progress-photos')
         .getPublicUrl(fileName);
 
-      // Save photo record to database (we'll need to create this table)
-      const { error: dbError } = await supabase
+      // Save photo record to database 
+      const { error: dbError } = await (supabase as any)
         .from('progress_photos')
         .insert({
           user_id: user.id,
