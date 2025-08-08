@@ -202,7 +202,7 @@ export const ChatPage = () => {
   };
 
   return (
-    <div className="flex flex-col h-screen max-w-md mx-auto">
+    <div className="flex flex-col h-[calc(100vh-6rem)] max-w-md mx-auto bg-background">
       {/* Header */}
       <div className="p-4 border-b bg-card">
         <div className="text-center">
@@ -215,7 +215,7 @@ export const ChatPage = () => {
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-4">
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0">
         {messages.map((message) => (
           <div
             key={message.id}
@@ -301,12 +301,12 @@ export const ChatPage = () => {
       </div>
 
       {/* Input */}
-      <div className="p-4 border-t bg-card">
+      <div className="p-4 border-t bg-card flex-shrink-0">
         <div className="flex gap-2">
           <Input
             value={inputMessage}
             onChange={(e) => setInputMessage(e.target.value)}
-            placeholder="Ask for motivation, advice, or share your progress..."
+            placeholder="Type your message here..."
             className="flex-1"
             onKeyPress={(e) => e.key === 'Enter' && sendMessage(inputMessage)}
           />
@@ -318,6 +318,9 @@ export const ChatPage = () => {
             <Send className="h-4 w-4" />
           </Button>
         </div>
+        <p className="text-xs text-muted-foreground mt-2">
+          Share your thoughts, ask for advice, or get motivation support
+        </p>
       </div>
     </div>
   );
