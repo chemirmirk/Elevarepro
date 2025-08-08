@@ -1,8 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Camera, Upload, Eye, ArrowLeftRight, Calendar, Plus, Lock } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { PhotoUpload } from "./PhotoUpload";
 
 interface ProgressPhoto {
   id: string;
@@ -48,9 +51,42 @@ const categoryStyles = {
 };
 
 export const PhotosPage = () => {
-  const [photos, setPhotos] = useState<ProgressPhoto[]>(mockPhotos);
+  const { user } = useAuth();
+  const [photos, setPhotos] = useState<ProgressPhoto[]>([]);
   const [selectedPhotos, setSelectedPhotos] = useState<[string?, string?]>([]);
   const [showComparison, setShowComparison] = useState(false);
+  const [showUpload, setShowUpload] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      loadPhotos();
+    }
+  }, [user]);
+
+  const loadPhotos = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('progress_photos')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('date', { ascending: false });
+
+      if (error) throw error;
+      
+      setPhotos(data?.map(photo => ({
+        id: photo.id,
+        imageUrl: photo.image_url,
+        date: photo.date,
+        milestone: photo.milestone,
+        note: photo.note,
+        category: photo.category
+      })) || []);
+    } catch (error) {
+      console.error('Error loading photos:', error);
+    }
+  };
 
   const selectPhotoForComparison = (photoId: string) => {
     if (selectedPhotos[0] === photoId) {
@@ -122,19 +158,35 @@ export const PhotosPage = () => {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
-            <Button className="h-12 bg-primary/10 text-primary hover:bg-primary/20 border border-primary/20">
-              <Camera className="h-4 w-4 mr-2" />
-              Take Photo
-            </Button>
-            <Button variant="outline" className="h-12">
-              <Upload className="h-4 w-4 mr-2" />
-              Upload
-            </Button>
-          </div>
-          <p className="text-xs text-muted-foreground text-center">
-            Document your progress with regular photos to see your transformation over time.
-          </p>
+          {showUpload ? (
+            <PhotoUpload 
+              onPhotoAdded={loadPhotos}
+              onClose={() => setShowUpload(false)}
+            />
+          ) : (
+            <>
+              <div className="grid grid-cols-2 gap-3">
+                <Button 
+                  onClick={() => setShowUpload(true)}
+                  className="h-12 bg-primary/10 text-primary hover:bg-primary/20 border border-primary/20"
+                >
+                  <Camera className="h-4 w-4 mr-2" />
+                  Take Photo
+                </Button>
+                <Button 
+                  onClick={() => setShowUpload(true)}
+                  variant="outline" 
+                  className="h-12"
+                >
+                  <Upload className="h-4 w-4 mr-2" />
+                  Upload
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground text-center">
+                Document your progress with regular photos to see your transformation over time.
+              </p>
+            </>
+          )}
         </CardContent>
       </Card>
 

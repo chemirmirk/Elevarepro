@@ -1,15 +1,78 @@
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Flame, Target, Calendar, TrendingUp, Award, Clock } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 export const DashboardPage = () => {
-  // Mock data - will be replaced with real data later
-  const currentStreak = 7;
-  const weeklyGoal = 5;
-  const completedThisWeek = 4;
-  const progressPercentage = (completedThisWeek / weeklyGoal) * 100;
+  const { user } = useAuth();
+  const [currentStreak, setCurrentStreak] = useState(0);
+  const [weeklyGoal, setWeeklyGoal] = useState(5);
+  const [completedThisWeek, setCompletedThisWeek] = useState(0);
+  const [achievements, setAchievements] = useState<any[]>([]);
+  const progressPercentage = weeklyGoal > 0 ? (completedThisWeek / weeklyGoal) * 100 : 0;
+
+  useEffect(() => {
+    if (user) {
+      loadUserData();
+    }
+  }, [user]);
+
+  const loadUserData = async () => {
+    if (!user) return;
+    
+    try {
+      // Load streak data
+      const { data: streakData } = await supabase
+        .from('streaks')
+        .select('current_count')
+        .eq('user_id', user.id)
+        .eq('streak_type', 'daily_checkin')
+        .single();
+
+      setCurrentStreak(streakData?.current_count || 0);
+
+      // Load weekly progress (check-ins this week)
+      const startOfWeek = new Date();
+      startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
+      
+      const { data: weeklyData } = await supabase
+        .from('check_ins')
+        .select('id')
+        .eq('user_id', user.id)
+        .gte('date', startOfWeek.toISOString().split('T')[0]);
+
+      setCompletedThisWeek(weeklyData?.length || 0);
+
+      // Load recent achievements
+      const { data: achievementData } = await supabase
+        .from('achievements')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('earned_at', { ascending: false })
+        .limit(3);
+
+      setAchievements(achievementData || []);
+
+      // Load weekly goal from goals table
+      const { data: goalData } = await supabase
+        .from('goals')
+        .select('target_amount')
+        .eq('user_id', user.id)
+        .eq('goal_type', 'weekly_exercise')
+        .eq('is_active', true)
+        .single();
+
+      if (goalData?.target_amount) {
+        setWeeklyGoal(goalData.target_amount);
+      }
+    } catch (error) {
+      console.error('Error loading dashboard data:', error);
+    }
+  };
 
   return (
     <div className="p-4 pb-24 space-y-4 max-w-md mx-auto">
