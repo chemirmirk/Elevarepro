@@ -26,11 +26,14 @@ export const CheckinPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentStreak, setCurrentStreak] = useState(0);
   const [moodData, setMoodData] = useState<number[]>([]);
+  const [hasCheckedInToday, setHasCheckedInToday] = useState(false);
+  const [todayCheckIn, setTodayCheckIn] = useState<any>(null);
 
   useEffect(() => {
     if (user) {
       loadStreakData();
       loadRecentMoodData();
+      checkTodayCheckIn();
     }
   }, [user]);
 
@@ -71,6 +74,37 @@ export const CheckinPage = () => {
     }
   };
 
+  const checkTodayCheckIn = async () => {
+    if (!user) return;
+    
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const { data, error } = await supabase
+        .from('check_ins')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('date', today)
+        .maybeSingle();
+
+      if (error) throw error;
+      
+      if (data) {
+        setHasCheckedInToday(true);
+        setTodayCheckIn(data);
+        // Populate form with today's data
+        setSelectedMood(data.mood);
+        setProgressNotes(data.progress_notes || "");
+        setGoalsAchieved(data.goals_achieved || "");
+        setChallengesFaced(data.challenges || "");
+      } else {
+        setHasCheckedInToday(false);
+        setTodayCheckIn(null);
+      }
+    } catch (error) {
+      console.error('Error checking today\'s check-in:', error);
+    }
+  };
+
   const handleSubmit = async () => {
     if (!selectedMood || !progressNotes.trim() || !goalsAchieved.trim() || !challengesFaced.trim() || !user) {
       return;
@@ -79,66 +113,76 @@ export const CheckinPage = () => {
     try {
       setIsSubmitting(true);
       
-      // Save check-in
-      const { error: checkinError } = await supabase
-        .from('check_ins')
-        .insert({
-          user_id: user.id,
-          mood: selectedMood,
-          progress_notes: progressNotes.trim(),
-          goals_achieved: goalsAchieved.trim(),
-          challenges: challengesFaced.trim(),
-          date: new Date().toISOString().split('T')[0]
-        });
-
-      if (checkinError) throw checkinError;
-
-      // Update streak
-      const { data: streakData } = await supabase
-        .from('streaks')
-        .select('current_count, best_count, last_updated')
-        .eq('user_id', user.id)
-        .eq('streak_type', 'daily_checkin')
-        .single();
-
       const today = new Date().toISOString().split('T')[0];
-      const lastUpdated = streakData?.last_updated;
       
-      let newCount = 1;
-      if (lastUpdated && lastUpdated !== today) {
-        const yesterday = new Date();
-        yesterday.setDate(yesterday.getDate() - 1);
-        const yesterdayStr = yesterday.toISOString().split('T')[0];
+      if (hasCheckedInToday && todayCheckIn) {
+        // Update existing check-in
+        const { error: checkinError } = await supabase
+          .from('check_ins')
+          .update({
+            mood: selectedMood,
+            progress_notes: progressNotes.trim(),
+            goals_achieved: goalsAchieved.trim(),
+            challenges: challengesFaced.trim(),
+          })
+          .eq('id', todayCheckIn.id);
+
+        if (checkinError) throw checkinError;
+        toast.success("Check-in updated successfully!");
+      } else {
+        // Create new check-in
+        const { error: checkinError } = await supabase
+          .from('check_ins')
+          .insert({
+            user_id: user.id,
+            mood: selectedMood,
+            progress_notes: progressNotes.trim(),
+            goals_achieved: goalsAchieved.trim(),
+            challenges: challengesFaced.trim(),
+            date: today
+          });
+
+        if (checkinError) throw checkinError;
+        toast.success("Check-in completed successfully!");
         
-        if (lastUpdated === yesterdayStr) {
-          newCount = (streakData?.current_count || 0) + 1;
+        // Update streak only for new check-ins
+        const { data: streakData } = await supabase
+          .from('streaks')
+          .select('current_count, best_count, last_updated')
+          .eq('user_id', user.id)
+          .eq('streak_type', 'daily_checkin')
+          .maybeSingle();
+
+        const lastUpdated = streakData?.last_updated;
+        
+        let newCount = 1;
+        if (lastUpdated && lastUpdated !== today) {
+          const yesterday = new Date();
+          yesterday.setDate(yesterday.getDate() - 1);
+          const yesterdayStr = yesterday.toISOString().split('T')[0];
+          
+          if (lastUpdated === yesterdayStr) {
+            newCount = (streakData?.current_count || 0) + 1;
+          }
         }
-      } else if (lastUpdated === today) {
-        newCount = streakData?.current_count || 1;
+
+        const { error: streakError } = await supabase
+          .from('streaks')
+          .update({
+            current_count: newCount,
+            best_count: Math.max(newCount, streakData?.best_count || 0),
+            last_updated: today
+          })
+          .eq('user_id', user.id)
+          .eq('streak_type', 'daily_checkin');
+
+        if (streakError) throw streakError;
+        setCurrentStreak(newCount);
+        setHasCheckedInToday(true);
       }
-
-      const { error: streakError } = await supabase
-        .from('streaks')
-        .update({
-          current_count: newCount,
-          best_count: Math.max(newCount, streakData?.best_count || 0),
-          last_updated: today
-        })
-        .eq('user_id', user.id)
-        .eq('streak_type', 'daily_checkin');
-
-      if (streakError) throw streakError;
-
-      setCurrentStreak(newCount);
-      toast.success("Check-in completed successfully!");
       
-      // Reset form
-      setSelectedMood(null);
-      setProgressNotes("");
-      setGoalsAchieved("");
-      setChallengesFaced("");
-      
-      // Reload mood data
+      // Reload data
+      checkTodayCheckIn();
       loadRecentMoodData();
     } catch (error) {
       console.error('Error saving check-in:', error);
@@ -155,24 +199,29 @@ export const CheckinPage = () => {
       {/* Header */}
       <div className="text-center py-4">
         <h1 className="text-2xl font-bold mb-2">Daily Check-in</h1>
-        <p className="text-muted-foreground">How was your day? Let's track your progress</p>
+        <p className="text-muted-foreground">
+          {hasCheckedInToday 
+            ? "You've already checked in today! You can update your responses below." 
+            : "How was your day? Let's track your progress"
+          }
+        </p>
       </div>
 
       {/* Streak Counter */}
-      <Card className="gradient-primary text-white shadow-primary">
+      <Card className={`${hasCheckedInToday ? 'bg-green-50 border-green-200' : 'gradient-primary shadow-primary'} ${hasCheckedInToday ? 'text-green-800' : 'text-white'}`}>
         <CardContent className="p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-white/20 rounded-full">
+              <div className={`p-2 ${hasCheckedInToday ? 'bg-green-200' : 'bg-white/20'} rounded-full`}>
                 <CheckCircle className="h-5 w-5" />
               </div>
               <div>
-                <p className="text-sm opacity-90">Check-in Streak</p>
+                <p className={`text-sm ${hasCheckedInToday ? 'text-green-600' : 'opacity-90'}`}>Check-in Streak</p>
                 <p className="text-xl font-bold">{currentStreak} days</p>
               </div>
             </div>
-            <Badge className="bg-white/20 text-white border-white/30">
-              Keep it up!
+            <Badge className={hasCheckedInToday ? 'bg-green-200 text-green-800 border-green-300' : 'bg-white/20 text-white border-white/30'}>
+              {hasCheckedInToday ? 'Completed!' : 'Keep it up!'}
             </Badge>
           </div>
         </CardContent>
@@ -301,7 +350,7 @@ export const CheckinPage = () => {
           disabled={!isFormValid || isSubmitting}
           className="w-full h-12 gradient-primary shadow-primary text-white font-semibold"
         >
-          {isSubmitting ? "Saving..." : "Complete Check-in"}
+          {isSubmitting ? "Saving..." : hasCheckedInToday ? "Update Check-in" : "Complete Check-in"}
         </Button>
       </div>
     </div>
