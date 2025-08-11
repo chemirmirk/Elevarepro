@@ -45,6 +45,10 @@ export default {
 					DEFAULT: 'hsl(var(--destructive))',
 					foreground: 'hsl(var(--destructive-foreground))'
 				},
+				progress: {
+					DEFAULT: 'hsl(var(--progress))',
+					foreground: 'hsl(var(--progress-foreground))'
+				},
 				muted: {
 					DEFAULT: 'hsl(var(--muted))',
 					foreground: 'hsl(var(--muted-foreground))'
