@@ -1,4 +1,4 @@
-import { Home, CheckCircle, Calendar, Camera, MessageCircle, Bell } from "lucide-react";
+import { Home, CheckCircle, Calendar, Camera, MessageCircle, Bell, Target } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface MobileTabBarProps {
@@ -9,6 +9,7 @@ interface MobileTabBarProps {
 const tabs = [
   { id: 'dashboard', label: 'Home', icon: Home },
   { id: 'checkin', label: 'Check-in', icon: CheckCircle },
+  { id: 'goals', label: 'Goals', icon: Target },
   { id: 'reminders', label: 'Reminders', icon: Bell },
   { id: 'calendar', label: 'Calendar', icon: Calendar },
   { id: 'photos', label: 'Photos', icon: Camera },

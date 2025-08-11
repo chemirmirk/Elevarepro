@@ -7,6 +7,7 @@ import { RemindersPage } from "@/components/RemindersPage";
 import { CalendarPage } from "@/components/CalendarPage";
 import { PhotosPage } from "@/components/PhotosPage";
 import { ChatPage } from "@/components/ChatPage";
+import { GoalsPage } from "@/components/GoalsPage";
 import { OnboardingFlow } from "@/components/OnboardingFlow";
 import { Button } from "@/components/ui/button";
 import { LogOut, User } from "lucide-react";
@@ -48,6 +49,8 @@ const Index = () => {
         return <DashboardPage />;
       case 'checkin':
         return <CheckinPage />;
+      case 'goals':
+        return <GoalsPage />;
       case 'reminders':
         return <RemindersPage />;
       case 'calendar':
