@@ -146,49 +146,66 @@ export const CheckinPage = () => {
         toast.success("Check-in completed successfully!");
         
         // Update streak only for new check-ins
-        const { data: streakData } = await supabase
-          .from('streaks')
-          .select('current_count, best_count, last_updated')
-          .eq('user_id', user.id)
-          .eq('streak_type', 'daily_checkin')
-          .maybeSingle();
-
-        const lastUpdated = streakData?.last_updated;
-        
-        let newCount = 1;
-        if (lastUpdated && lastUpdated !== today) {
-          const yesterday = new Date();
-          yesterday.setDate(yesterday.getDate() - 1);
-          const yesterdayStr = yesterday.toISOString().split('T')[0];
-          
-          if (lastUpdated === yesterdayStr) {
-            newCount = (streakData?.current_count || 0) + 1;
-          }
-        }
-
-        const { error: streakError } = await supabase
-          .from('streaks')
-          .update({
-            current_count: newCount,
-            best_count: Math.max(newCount, streakData?.best_count || 0),
-            last_updated: today
-          })
-          .eq('user_id', user.id)
-          .eq('streak_type', 'daily_checkin');
-
-        if (streakError) throw streakError;
-        setCurrentStreak(newCount);
-        setHasCheckedInToday(true);
+        await updateDailyCheckinStreak();
       }
-      
-      // Reload data
+
+      // Reset form and reload data
+      setProgressNotes("");
+      setGoalsAchieved("");
+      setChallengesFaced("");
+      setSelectedMood(null);
+      setHasCheckedInToday(true);
       checkTodayCheckIn();
       loadRecentMoodData();
+      
     } catch (error) {
       console.error('Error saving check-in:', error);
       toast.error("Failed to save check-in. Please try again.");
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const updateDailyCheckinStreak = async () => {
+    if (!user) return;
+
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      
+      const { data: streakData } = await supabase
+        .from('streaks')
+        .select('current_count, best_count, last_updated')
+        .eq('user_id', user.id)
+        .eq('streak_type', 'daily_checkin')
+        .maybeSingle();
+
+      const lastUpdated = streakData?.last_updated;
+      
+      let newCount = 1;
+      if (lastUpdated && lastUpdated !== today) {
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        const yesterdayStr = yesterday.toISOString().split('T')[0];
+        
+        if (lastUpdated === yesterdayStr) {
+          newCount = (streakData?.current_count || 0) + 1;
+        }
+      }
+
+      const { error: streakError } = await supabase
+        .from('streaks')
+        .upsert({
+          user_id: user.id,
+          streak_type: 'daily_checkin',
+          current_count: newCount,
+          best_count: Math.max(newCount, streakData?.best_count || 0),
+          last_updated: today
+        });
+
+      if (streakError) throw streakError;
+      setCurrentStreak(newCount);
+    } catch (error) {
+      console.error('Error updating streak:', error);
     }
   };
 

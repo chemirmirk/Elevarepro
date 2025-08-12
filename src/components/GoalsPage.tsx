@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, Target, Edit, Trash2 } from "lucide-react";
+import { Plus, Target, Edit } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface Goal {
@@ -63,7 +63,8 @@ export const GoalsPage = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+    if (!user) return;
+
     if (!formData.goal_type || !formData.target_amount || !formData.target_unit) {
       toast({
         title: "Error",
@@ -74,19 +75,15 @@ export const GoalsPage = () => {
     }
 
     try {
-      const goalData = {
-        user_id: user?.id,
-        goal_type: formData.goal_type,
-        target_amount: parseInt(formData.target_amount),
-        target_unit: formData.target_unit,
-        current_amount: 0,
-        is_active: true,
-      };
-
       if (editingGoal) {
+        // Update existing goal
         const { error } = await supabase
           .from('goals')
-          .update(goalData)
+          .update({
+            goal_type: formData.goal_type,
+            target_amount: parseInt(formData.target_amount),
+            target_unit: formData.target_unit,
+          })
           .eq('id', editingGoal.id);
 
         if (error) throw error;
@@ -95,19 +92,27 @@ export const GoalsPage = () => {
           description: "Goal updated successfully",
         });
       } else {
+        // Create new goal
         const { error } = await supabase
           .from('goals')
-          .insert([goalData]);
+          .insert({
+            user_id: user.id,
+            goal_type: formData.goal_type,
+            target_amount: parseInt(formData.target_amount),
+            current_amount: 0,
+            target_unit: formData.target_unit,
+            is_active: true
+          });
 
         if (error) throw error;
         toast({
-          title: "Success", 
+          title: "Success",
           description: "Goal created successfully",
         });
       }
 
-      setFormData({ goal_type: "", target_amount: "", target_unit: "" });
-      setEditingGoal(null);
+      // Reset form and close dialog
+      resetForm();
       setIsDialogOpen(false);
       loadGoals();
     } catch (error) {
@@ -130,44 +135,47 @@ export const GoalsPage = () => {
     setIsDialogOpen(true);
   };
 
-  const handleDelete = async (goalId: string) => {
+  const handleDeactivate = async (goalId: string) => {
     try {
       const { error } = await supabase
         .from('goals')
-        .delete()
+        .update({ is_active: false })
         .eq('id', goalId);
 
       if (error) throw error;
-      
       toast({
         title: "Success",
-        description: "Goal deleted successfully",
+        description: "Goal paused successfully",
       });
       loadGoals();
     } catch (error) {
-      console.error('Error deleting goal:', error);
+      console.error('Error deactivating goal:', error);
       toast({
         title: "Error",
-        description: "Failed to delete goal",
+        description: "Failed to pause goal",
         variant: "destructive",
       });
     }
   };
 
-  const toggleGoalStatus = async (goal: Goal) => {
+  const handleReactivate = async (goalId: string) => {
     try {
       const { error } = await supabase
         .from('goals')
-        .update({ is_active: !goal.is_active })
-        .eq('id', goal.id);
+        .update({ is_active: true })
+        .eq('id', goalId);
 
       if (error) throw error;
+      toast({
+        title: "Success",
+        description: "Goal resumed successfully",
+      });
       loadGoals();
     } catch (error) {
-      console.error('Error updating goal status:', error);
+      console.error('Error reactivating goal:', error);
       toast({
         title: "Error",
-        description: "Failed to update goal status",
+        description: "Failed to resume goal",
         variant: "destructive",
       });
     }
@@ -177,6 +185,9 @@ export const GoalsPage = () => {
     setFormData({ goal_type: "", target_amount: "", target_unit: "" });
     setEditingGoal(null);
   };
+
+  const activeGoals = goals.filter(goal => goal.is_active);
+  const inactiveGoals = goals.filter(goal => !goal.is_active);
 
   if (loading) {
     return (
@@ -188,7 +199,7 @@ export const GoalsPage = () => {
   }
 
   return (
-    <div className="p-4 space-y-6 max-w-4xl mx-auto">
+    <div className="p-4 space-y-6 max-w-4xl mx-auto pb-24">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -224,6 +235,7 @@ export const GoalsPage = () => {
                     <SelectItem value="reading">Reading</SelectItem>
                     <SelectItem value="sleep">Sleep</SelectItem>
                     <SelectItem value="steps">Steps</SelectItem>
+                    <SelectItem value="smoking_cessation">Smoking Cessation</SelectItem>
                     <SelectItem value="custom">Custom</SelectItem>
                   </SelectContent>
                 </Select>
@@ -266,6 +278,7 @@ export const GoalsPage = () => {
                     <SelectItem value="hours">Hours</SelectItem>
                     <SelectItem value="pages">Pages</SelectItem>
                     <SelectItem value="steps">Steps</SelectItem>
+                    <SelectItem value="cigarettes_per_day">Cigarettes per Day</SelectItem>
                     <SelectItem value="times">Times</SelectItem>
                   </SelectContent>
                 </Select>
@@ -288,42 +301,30 @@ export const GoalsPage = () => {
         </Dialog>
       </div>
 
-      {/* Goals List */}
-      <div className="space-y-4">
-        {goals.length === 0 ? (
-          <Card>
-            <CardContent className="p-8 text-center">
-              <Target className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-medium mb-2">No goals yet</h3>
-              <p className="text-muted-foreground mb-4">Create your first goal to start tracking your progress</p>
-              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Create Goal
-                  </Button>
-                </DialogTrigger>
-              </Dialog>
-            </CardContent>
-          </Card>
-        ) : (
-          goals.map((goal) => (
-            <Card key={goal.id} className={!goal.is_active ? "opacity-60" : ""}>
+      {/* Active Goals */}
+      {activeGoals.length > 0 && (
+        <div className="space-y-4">
+          <h2 className="text-lg font-semibold">Active Goals</h2>
+          {activeGoals.map((goal) => (
+            <Card key={goal.id} className="shadow-card">
               <CardHeader>
                 <div className="flex items-center justify-between">
-                  <CardTitle className="capitalize">{goal.goal_type.replace('_', ' ')}</CardTitle>
+                  <CardTitle className="capitalize flex items-center gap-2">
+                    <Target className="h-5 w-5 text-primary" />
+                    {goal.goal_type.replace('_', ' ')}
+                  </CardTitle>
                   <div className="flex gap-2">
                     <Button variant="outline" size="sm" onClick={() => handleEdit(goal)}>
                       <Edit className="h-4 w-4" />
                     </Button>
-                    <Button variant="outline" size="sm" onClick={() => handleDelete(goal.id)}>
-                      <Trash2 className="h-4 w-4" />
+                    <Button variant="outline" size="sm" onClick={() => handleDeactivate(goal.id)}>
+                      Pause
                     </Button>
                   </div>
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="space-y-2">
+                <div className="space-y-3">
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-muted-foreground">Progress</span>
                     <span className="text-sm font-medium">
@@ -336,24 +337,84 @@ export const GoalsPage = () => {
                       style={{ width: `${Math.min((goal.current_amount / goal.target_amount) * 100, 100)}%` }}
                     />
                   </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs text-muted-foreground">
+                  <div className="text-center">
+                    <span className="text-sm font-medium text-primary">
                       {Math.round((goal.current_amount / goal.target_amount) * 100)}% complete
                     </span>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => toggleGoalStatus(goal)}
-                    >
-                      {goal.is_active ? 'Pause' : 'Resume'}
-                    </Button>
                   </div>
                 </div>
               </CardContent>
             </Card>
-          ))
-        )}
-      </div>
+          ))}
+        </div>
+      )}
+
+      {/* Previous/Inactive Goals */}
+      {inactiveGoals.length > 0 && (
+        <div className="space-y-4">
+          <h2 className="text-lg font-semibold text-muted-foreground">Previous Goals</h2>
+          {inactiveGoals.map((goal) => (
+            <Card key={goal.id} className="opacity-60 border-dashed">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="capitalize flex items-center gap-2">
+                    <Target className="h-5 w-5 text-muted-foreground" />
+                    {goal.goal_type.replace('_', ' ')}
+                  </CardTitle>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" onClick={() => handleReactivate(goal.id)}>
+                      Resume
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => handleEdit(goal)}>
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">Final Progress</span>
+                    <span className="text-sm font-medium">
+                      {goal.current_amount} / {goal.target_amount} {goal.target_unit}
+                    </span>
+                  </div>
+                  <div className="w-full bg-muted rounded-full h-2">
+                    <div 
+                      className="bg-muted-foreground h-2 rounded-full transition-all"
+                      style={{ width: `${Math.min((goal.current_amount / goal.target_amount) * 100, 100)}%` }}
+                    />
+                  </div>
+                  <div className="text-center">
+                    <span className="text-sm text-muted-foreground">
+                      {Math.round((goal.current_amount / goal.target_amount) * 100)}% completed
+                    </span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {/* Empty State */}
+      {goals.length === 0 && (
+        <Card>
+          <CardContent className="p-8 text-center">
+            <Target className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-medium mb-2">No goals yet</h3>
+            <p className="text-muted-foreground mb-4">Create your first goal to start tracking your progress</p>
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Goal
+                </Button>
+              </DialogTrigger>
+            </Dialog>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };
