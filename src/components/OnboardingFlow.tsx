@@ -83,6 +83,25 @@ export const OnboardingFlow = ({ onComplete }: OnboardingFlowProps) => {
 
       if (error) throw error;
       
+      // Set up smoking cessation reminders if user selected smoking challenge
+      if (data.challenges.includes('smoking') && data.goals.smoking) {
+        console.log('Setting up smoking reminders...');
+        
+        const { error: reminderError } = await supabase.functions.invoke('setup-smoking-reminders', {
+          body: {
+            userId: user.id,
+            smokingGoal: data.goals.smoking
+          }
+        });
+
+        if (reminderError) {
+          console.error('Error setting up smoking reminders:', reminderError);
+          // Don't fail the onboarding if reminders fail
+        } else {
+          console.log('Smoking reminders set up successfully');
+        }
+      }
+      
       toast.success("Onboarding completed successfully!");
       onComplete(data);
     } catch (error) {
