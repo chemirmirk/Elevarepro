@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 import { MobileTabBar } from "@/components/MobileTabBar";
 import { DashboardPage } from "@/components/DashboardPage";
 import { CheckinPage } from "@/components/CheckinPage";
@@ -16,11 +17,47 @@ const Index = () => {
   const { user, signOut } = useAuth();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isOnboarded, setIsOnboarded] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const checkOnboardingStatus = async () => {
+      if (!user) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('onboarding_data')
+          .select('id')
+          .eq('user_id', user.id)
+          .single();
+
+        if (data && !error) {
+          setIsOnboarded(true);
+        }
+      } catch (error) {
+        console.log('No onboarding data found, user needs to onboard');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkOnboardingStatus();
+  }, [user]);
 
   const handleOnboardingComplete = (data: any) => {
     console.log('Onboarding completed with data:', data);
     setIsOnboarded(true);
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!isOnboarded) {
     return (
