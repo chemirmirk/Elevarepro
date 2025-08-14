@@ -72,13 +72,15 @@ export const OnboardingFlow = ({ onComplete }: OnboardingFlowProps) => {
       
       const { error } = await supabase
         .from('onboarding_data')
-        .insert({
+        .upsert({
           user_id: user.id,
           challenges: data.challenges,
           goals: data.goals,
           motivation: data.motivation,
           previous_attempts: data.previousAttempts,
           current_habits: data.currentHabits
+        }, {
+          onConflict: 'user_id'
         });
 
       if (error) throw error;
