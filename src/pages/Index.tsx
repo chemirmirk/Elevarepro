@@ -28,13 +28,19 @@ const Index = () => {
           .from('onboarding_data')
           .select('id')
           .eq('user_id', user.id)
-          .single();
+          .maybeSingle();
 
-        if (data && !error) {
+        if (error) {
+          console.error('Error checking onboarding status:', error);
+          setIsOnboarded(false);
+        } else if (data) {
           setIsOnboarded(true);
+        } else {
+          setIsOnboarded(false);
         }
       } catch (error) {
-        console.log('No onboarding data found, user needs to onboard');
+        console.error('Unexpected error:', error);
+        setIsOnboarded(false);
       } finally {
         setLoading(false);
       }
