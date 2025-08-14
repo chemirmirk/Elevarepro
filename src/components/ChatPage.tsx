@@ -131,15 +131,23 @@ export const ChatPage = () => {
     // Save user message
     await saveMessage(userMessage);
 
-    // Simulate AI response
-    setTimeout(async () => {
-      const aiResponse = generateAIResponse(content);
+    try {
+      // Call AI chat function
+      const { data, error } = await supabase.functions.invoke('ai-chat', {
+        body: { 
+          message: content.trim(),
+          chatHistory: messages 
+        }
+      });
+
+      if (error) throw error;
+
       const aiMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
-        content: aiResponse.content,
+        content: data.response,
         sender: 'ai',
         timestamp: new Date(),
-        type: aiResponse.type
+        type: data.type as ChatMessage['type']
       };
       
       setMessages(prev => [...prev, aiMessage]);
@@ -147,7 +155,25 @@ export const ChatPage = () => {
       
       // Save AI message
       await saveMessage(aiMessage);
-    }, 1500);
+    } catch (error) {
+      console.error('Error getting AI response:', error);
+      setIsTyping(false);
+      
+      // Fallback to local response
+      const fallbackResponse = generateAIResponse(content);
+      const aiMessage: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        content: fallbackResponse.content,
+        sender: 'ai',
+        timestamp: new Date(),
+        type: fallbackResponse.type
+      };
+      
+      setMessages(prev => [...prev, aiMessage]);
+      await saveMessage(aiMessage);
+      
+      toast.error("AI service temporarily unavailable");
+    }
   };
 
   const generateAIResponse = (userMessage: string): { content: string; type: ChatMessage['type'] } => {
