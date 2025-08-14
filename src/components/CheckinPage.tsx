@@ -43,15 +43,16 @@ export const CheckinPage = () => {
     try {
       const { data, error } = await supabase
         .from('streaks')
-        .select('current_count')
+        .select('current_count, best_count')
         .eq('user_id', user.id)
         .eq('streak_type', 'daily_checkin')
-        .single();
+        .maybeSingle();
 
-      if (error && error.code !== 'PGRST116') throw error;
+      if (error) throw error;
       setCurrentStreak(data?.current_count || 0);
     } catch (error) {
       console.error('Error loading streak data:', error);
+      setCurrentStreak(0);
     }
   };
 
@@ -170,42 +171,40 @@ export const CheckinPage = () => {
     if (!user) return;
 
     try {
-      const today = new Date().toISOString().split('T')[0];
-      
-      const { data: streakData } = await supabase
-        .from('streaks')
-        .select('current_count, best_count, last_updated')
-        .eq('user_id', user.id)
-        .eq('streak_type', 'daily_checkin')
-        .maybeSingle();
+      const { data, error } = await supabase.functions.invoke('update-streak', {
+        body: {
+          userId: user.id,
+          streakType: 'daily_checkin'
+        }
+      });
 
-      const lastUpdated = streakData?.last_updated;
-      
-      let newCount = 1;
-      if (lastUpdated && lastUpdated !== today) {
-        const yesterday = new Date();
-        yesterday.setDate(yesterday.getDate() - 1);
-        const yesterdayStr = yesterday.toISOString().split('T')[0];
-        
-        if (lastUpdated === yesterdayStr) {
-          newCount = (streakData?.current_count || 0) + 1;
+      if (error) {
+        console.error('Error calling update-streak function:', error);
+        throw error;
+      }
+
+      const { currentStreak, isPersonalBest, bestStreak } = data;
+      setCurrentStreak(currentStreak);
+
+      if (isPersonalBest) {
+        toast.success(`🎉 New personal best! ${currentStreak} day streak!`);
+      } else if (currentStreak === 1) {
+        // Check if this was a streak reset
+        const { data: previousStreak } = await supabase
+          .from('streaks')
+          .select('current_count')
+          .eq('user_id', user.id)
+          .eq('streak_type', 'daily_checkin')
+          .single();
+
+        if (previousStreak && previousStreak.current_count > 1) {
+          toast.info(`Streak reset to 1 day. Keep going! Your best is ${bestStreak} days.`);
         }
       }
 
-      const { error: streakError } = await supabase
-        .from('streaks')
-        .upsert({
-          user_id: user.id,
-          streak_type: 'daily_checkin',
-          current_count: newCount,
-          best_count: Math.max(newCount, streakData?.best_count || 0),
-          last_updated: today
-        });
-
-      if (streakError) throw streakError;
-      setCurrentStreak(newCount);
     } catch (error) {
       console.error('Error updating streak:', error);
+      toast.error("Failed to update streak data.");
     }
   };
 
