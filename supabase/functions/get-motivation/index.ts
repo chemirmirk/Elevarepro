@@ -31,12 +31,14 @@ serve(async (req) => {
         input: [
           {
             role: "user",
-            content: `The user's name is ${userName}.
+            content: `
+The user's name is ${userName}.
 Goal: ${goal}.
-Streak day: ${streak}.
+Current streak: ${streak} days.
 Biggest challenge: ${challenge}.
-Today they said: "${userMessage}".
-Provide a short, supportive, and motivational reply.`
+Message from user: "${userMessage}".
+Reply with a short, encouraging, and goal-focused motivational message.
+            `
           }
         ]
       })
@@ -49,6 +51,8 @@ Provide a short, supportive, and motivational reply.`
     }
 
     const data = await response.json();
+    
+    // Return AI response text
     const motivationText = data.output_text || data.output?.[0]?.content?.[0]?.text || "Keep going! You're doing great!";
 
     return new Response(JSON.stringify({ 
@@ -60,7 +64,7 @@ Provide a short, supportive, and motivational reply.`
     console.error('Error in get-motivation function:', error);
     
     // Fallback motivation message
-    const fallbackMessage = "Keep going! You're doing great and every step forward counts. Your commitment to your goals is inspiring!";
+    const fallbackMessage = "Oops! Something went wrong. Keep pushing forward!";
     
     return new Response(JSON.stringify({ 
       motivation: fallbackMessage,
