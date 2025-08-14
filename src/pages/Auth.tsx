@@ -105,6 +105,36 @@ export default function Auth() {
     }
   };
 
+  const handleForgotPassword = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError('');
+
+    const formData = new FormData(e.currentTarget);
+    const email = formData.get('reset-email') as string;
+
+    try {
+      const redirectUrl = `${window.location.origin}/auth`;
+      
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: redirectUrl,
+      });
+
+      if (error) {
+        setError(error.message);
+      } else {
+        toast({
+          title: "Password reset email sent",
+          description: "Check your email for a link to reset your password.",
+        });
+      }
+    } catch (err) {
+      setError('An unexpected error occurred. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-secondary/5 p-4">
       <div className="w-full max-w-md">
@@ -133,9 +163,10 @@ export default function Auth() {
             )}
 
             <Tabs defaultValue="signin" className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
+              <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="signin">Sign In</TabsTrigger>
                 <TabsTrigger value="signup">Sign Up</TabsTrigger>
+                <TabsTrigger value="reset">Reset</TabsTrigger>
               </TabsList>
 
               <TabsContent value="signin" className="space-y-4">
@@ -222,6 +253,37 @@ export default function Auth() {
                     )}
                   </Button>
                 </form>
+              </TabsContent>
+
+              <TabsContent value="reset" className="space-y-4">
+                <form onSubmit={handleForgotPassword} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="reset-email">Email</Label>
+                    <Input
+                      id="reset-email"
+                      name="reset-email"
+                      type="email"
+                      placeholder="Enter your email address"
+                      required
+                      disabled={isLoading}
+                    />
+                  </div>
+                  <Button type="submit" className="w-full" disabled={isLoading}>
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Sending reset email...
+                      </>
+                    ) : (
+                      'Send Password Reset Email'
+                    )}
+                  </Button>
+                </form>
+                <div className="text-center">
+                  <p className="text-sm text-muted-foreground">
+                    Remember your password? Switch back to the Sign In tab.
+                  </p>
+                </div>
               </TabsContent>
             </Tabs>
           </CardContent>
