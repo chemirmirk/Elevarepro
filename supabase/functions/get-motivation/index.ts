@@ -21,34 +21,25 @@ serve(async (req) => {
       throw new Error('OpenAI API key not configured');
     }
 
-    const prompt = `The user's name is ${userName}.
+    const response = await fetch("https://api.openai.com/v1/assistants/Pursivo/responses", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${openAIApiKey}`
+      },
+      body: JSON.stringify({
+        input: [
+          {
+            role: "user",
+            content: `The user's name is ${userName}.
 Goal: ${goal}.
 Streak day: ${streak}.
 Biggest challenge: ${challenge}.
 Today they said: "${userMessage}".
-Provide a short, supportive, and motivational reply.`;
-
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          {
-            role: 'system',
-            content: 'You are a compassionate and motivating coach. Provide short, personalized, and encouraging responses that acknowledge the user\'s progress and challenges. Keep responses under 3 sentences and focus on actionable motivation.'
-          },
-          {
-            role: 'user',
-            content: prompt
+Provide a short, supportive, and motivational reply.`
           }
-        ],
-        max_tokens: 150,
-        temperature: 0.7,
-      }),
+        ]
+      })
     });
 
     if (!response.ok) {
@@ -58,7 +49,7 @@ Provide a short, supportive, and motivational reply.`;
     }
 
     const data = await response.json();
-    const motivationText = data.choices[0].message.content;
+    const motivationText = data.output_text || data.output?.[0]?.content?.[0]?.text || "Keep going! You're doing great!";
 
     return new Response(JSON.stringify({ 
       motivation: motivationText 
