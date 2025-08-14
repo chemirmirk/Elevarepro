@@ -132,11 +132,34 @@ export const ChatPage = () => {
     await saveMessage(userMessage);
 
     try {
-      // Call AI chat function
-      const { data, error } = await supabase.functions.invoke('ai-chat', {
+      // Get user data for motivation context
+      const { data: userData, error: userError } = await supabase
+        .from('onboarding_data')
+        .select('goals, challenges')
+        .eq('user_id', user.id)
+        .single();
+
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('name')
+        .eq('user_id', user.id)
+        .single();
+
+      const { data: streakData, error: streakError } = await supabase
+        .from('streaks')
+        .select('current_count')
+        .eq('user_id', user.id)
+        .eq('streak_type', 'daily_checkin')
+        .single();
+
+      // Call getMotivation function
+      const { data, error } = await supabase.functions.invoke('get-motivation', {
         body: { 
-          message: content.trim(),
-          chatHistory: messages 
+          userName: profileData?.name || 'there',
+          goal: Array.isArray(userData?.goals) ? userData.goals[0] : 'building better habits',
+          streak: streakData?.current_count || 0,
+          challenge: Array.isArray(userData?.challenges) ? userData.challenges[0] : 'staying consistent',
+          userMessage: content.trim()
         }
       });
 
@@ -144,10 +167,10 @@ export const ChatPage = () => {
 
       const aiMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
-        content: data.response,
+        content: data.motivation,
         sender: 'ai',
         timestamp: new Date(),
-        type: data.type as ChatMessage['type']
+        type: 'motivation'
       };
       
       setMessages(prev => [...prev, aiMessage]);
