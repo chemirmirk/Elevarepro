@@ -286,14 +286,32 @@ export const CheckinPage = () => {
               <TrendingUp className="h-4 w-4 text-secondary" />
               <span className="text-sm font-medium">7-Day Mood Trend</span>
             </div>
-            <div className="flex items-end gap-1 h-8">
-              {moodData.map((mood, index) => (
-                <div
-                  key={index}
-                  className="flex-1 bg-secondary rounded-sm"
-                  style={{ height: `${(mood / 5) * 100}%` }}
-                ></div>
-              ))}
+            <div className="flex items-end justify-between gap-1 h-16 mb-2">
+              {Array.from({ length: 7 }, (_, index) => {
+                const moodValue = moodData[index] || 0;
+                const height = moodValue > 0 ? (moodValue / 5) * 100 : 10;
+                const moodEmoji = moodEmojis.find(m => m.value === moodValue);
+                const dayIndex = (new Date().getDay() - 6 + index + 7) % 7;
+                const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+                
+                return (
+                  <div key={index} className="flex-1 flex flex-col items-center">
+                    <div 
+                      className={`w-full rounded-sm transition-all duration-300 ${
+                        moodValue > 0 ? 'bg-secondary' : 'bg-muted border border-dashed border-muted-foreground/30'
+                      }`}
+                      style={{ height: `${height}%` }}
+                      title={moodEmoji ? `${dayNames[dayIndex]}: ${moodEmoji.label}` : `${dayNames[dayIndex]}: No data`}
+                    />
+                    <span className="text-xs text-muted-foreground mt-1">{dayNames[dayIndex]}</span>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="flex justify-between text-xs text-muted-foreground">
+              <span>😢</span>
+              <span className="text-center">Mood Scale</span>
+              <span>😄</span>
             </div>
           </div>
         </CardContent>
