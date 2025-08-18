@@ -149,6 +149,11 @@ export const CheckinPage = () => {
 
         if (checkinError) throw checkinError;
         toast.success("Check-in updated successfully!");
+        
+        // Also update streak for updated check-ins if this is the first update today
+        if (new Date(todayCheckIn.created_at).toDateString() === new Date().toDateString()) {
+          await updateDailyCheckinStreak();
+        }
       } else {
         // Create new check-in
         const { error: checkinError } = await supabase
