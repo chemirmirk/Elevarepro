@@ -30,12 +30,30 @@ export const DashboardPage = () => {
       // Load streak data
       const { data: streakData } = await supabase
         .from('streaks')
-        .select('current_count')
+        .select('current_count, last_updated')
         .eq('user_id', user.id)
         .eq('streak_type', 'daily_checkin')
-        .single();
+        .maybeSingle();
 
-      setCurrentStreak(streakData?.current_count || 0);
+      if (streakData) {
+        // Check if streak should be reset due to missed days
+        const today = new Date().toISOString().split('T')[0];
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        const yesterdayStr = yesterday.toISOString().split('T')[0];
+        
+        const lastUpdated = streakData.last_updated;
+        
+        if (lastUpdated && lastUpdated < yesterdayStr) {
+          // Missed days - streak should show 0
+          setCurrentStreak(0);
+        } else {
+          // Either updated yesterday/today or no last_updated - show current count
+          setCurrentStreak(streakData.current_count || 0);
+        }
+      } else {
+        setCurrentStreak(0);
+      }
 
       // Load weekly progress (check-ins this week)
       const startOfWeek = new Date();
