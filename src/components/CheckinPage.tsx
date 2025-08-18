@@ -43,13 +43,32 @@ export const CheckinPage = () => {
     try {
       const { data, error } = await supabase
         .from('streaks')
-        .select('current_count, best_count')
+        .select('current_count, best_count, last_updated')
         .eq('user_id', user.id)
         .eq('streak_type', 'daily_checkin')
         .maybeSingle();
 
       if (error) throw error;
-      setCurrentStreak(data?.current_count || 0);
+      
+      if (data) {
+        // Check if streak should be reset due to missed days
+        const today = new Date().toISOString().split('T')[0];
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        const yesterdayStr = yesterday.toISOString().split('T')[0];
+        
+        const lastUpdated = data.last_updated;
+        
+        if (lastUpdated && lastUpdated < yesterdayStr) {
+          // Missed days - streak should show 0
+          setCurrentStreak(0);
+        } else {
+          // Either updated yesterday/today or no last_updated - show current count
+          setCurrentStreak(data.current_count || 0);
+        }
+      } else {
+        setCurrentStreak(0);
+      }
     } catch (error) {
       console.error('Error loading streak data:', error);
       setCurrentStreak(0);
