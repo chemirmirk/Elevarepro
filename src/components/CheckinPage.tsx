@@ -79,16 +79,29 @@ export const CheckinPage = () => {
     if (!user) return;
     
     try {
+      // Get the last 7 days of mood data
       const { data, error } = await supabase
         .from('check_ins')
         .select('mood, date')
         .eq('user_id', user.id)
         .not('mood', 'is', null)
-        .order('date', { ascending: true })
-        .limit(7);
+        .order('date', { ascending: true });
 
       if (error) throw error;
-      setMoodData(data?.map(d => d.mood) || []);
+      
+      // Create array for last 7 days
+      const last7Days = [];
+      for (let i = 6; i >= 0; i--) {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        const dateStr = date.toISOString().split('T')[0];
+        
+        // Find mood for this specific date
+        const moodEntry = data?.find(entry => entry.date === dateStr);
+        last7Days.push(moodEntry ? moodEntry.mood : 0);
+      }
+      
+      setMoodData(last7Days);
     } catch (error) {
       console.error('Error loading mood data:', error);
     }
@@ -293,15 +306,15 @@ export const CheckinPage = () => {
               <span className="text-sm font-medium">7-Day Mood Trend</span>
             </div>
             <div className="flex items-end justify-between gap-1 h-16 mb-2">
-              {Array.from({ length: 7 }, (_, index) => {
-                const moodValue = moodData[index] || 0;
+              {moodData.map((moodValue, index) => {
                 const height = moodValue > 0 ? (moodValue / 5) * 100 : 10;
                 const moodEmoji = moodEmojis.find(m => m.value === moodValue);
-                const today = new Date();
-                const dayDate = new Date(today);
-                dayDate.setDate(today.getDate() - 6 + index);
+                
+                // Calculate the actual date for this position (last 7 days)
+                const date = new Date();
+                date.setDate(date.getDate() - (6 - index));
                 const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-                const dayName = dayNames[dayDate.getDay()];
+                const dayName = dayNames[date.getDay()];
                 
                 return (
                   <div key={index} className="flex-1 flex flex-col items-center">
@@ -310,7 +323,7 @@ export const CheckinPage = () => {
                         moodValue > 0 ? 'bg-secondary' : 'bg-muted border border-dashed border-muted-foreground/30'
                       }`}
                       style={{ height: `${height}%` }}
-                      title={moodEmoji ? `${dayName}: ${moodEmoji.label}` : `${dayName}: No data`}
+                      title={moodEmoji ? `${dayName}: ${moodEmoji.label} (${moodValue}/5)` : `${dayName}: No data`}
                     />
                     <span className="text-xs text-muted-foreground mt-1">{dayName}</span>
                   </div>
