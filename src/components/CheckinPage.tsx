@@ -187,15 +187,17 @@ export const CheckinPage = () => {
         await updateDailyCheckinStreak();
       }
 
-      // Reset form and reload data
+      // Always refresh all data after any check-in operation
+      await loadRecentMoodData(); // Refresh mood data immediately
+      await loadStreakData();     // Refresh streak data immediately
+      await checkTodayCheckIn();  // Refresh today's check-in status
+      
+      // Reset form state
       setProgressNotes("");
       setGoalsAchieved("");
       setChallengesFaced("");
       setSelectedMood(null);
       setHasCheckedInToday(true);
-      checkTodayCheckIn();
-      loadRecentMoodData();
-      loadStreakData();
       
     } catch (error) {
       console.error('Error saving check-in:', error);
