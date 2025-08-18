@@ -183,23 +183,15 @@ export const CheckinPage = () => {
         throw error;
       }
 
-      const { currentStreak, isPersonalBest, bestStreak } = data;
+      const { currentStreak, isPersonalBest, bestStreak, wasStreakReset } = data;
       setCurrentStreak(currentStreak);
 
       if (isPersonalBest) {
         toast.success(`🎉 New personal best! ${currentStreak} day streak!`);
-      } else if (currentStreak === 1) {
-        // Check if this was a streak reset
-        const { data: previousStreak } = await supabase
-          .from('streaks')
-          .select('current_count')
-          .eq('user_id', user.id)
-          .eq('streak_type', 'daily_checkin')
-          .single();
-
-        if (previousStreak && previousStreak.current_count > 1) {
-          toast.info(`Streak reset to 1 day. Keep going! Your best is ${bestStreak} days.`);
-        }
+      } else if (wasStreakReset) {
+        toast.info(`Streak reset due to missed days. Starting fresh with 1 day! Your best is ${bestStreak} days.`);
+      } else if (currentStreak > 1) {
+        toast.success(`Great job! ${currentStreak} day streak and counting!`);
       }
 
     } catch (error) {

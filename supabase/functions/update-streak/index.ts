@@ -49,6 +49,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     let newCount = 1;
     let isPersonalBest = false;
+    let wasStreakReset = false;
 
     if (streakData) {
       const lastUpdated = streakData.last_updated;
@@ -73,10 +74,13 @@ const handler = async (req: Request): Promise<Response> => {
         newCount = streakData.current_count + 1;
       } else if (lastUpdated && lastUpdated < yesterdayStr) {
         // Missed day(s), reset streak
-        console.log(`Streak reset for user ${userId}. Last updated: ${lastUpdated}, Yesterday: ${yesterdayStr}`);
+        wasStreakReset = streakData.current_count > 0; // Track if we're resetting a streak
+        console.log(`Streak reset for user ${userId}. Last updated: ${lastUpdated}, Yesterday: ${yesterdayStr}, Previous streak: ${streakData.current_count}`);
+        newCount = 1;
+      } else if (!lastUpdated) {
+        // First time checking in
         newCount = 1;
       }
-      // If lastUpdated is null, it's the first check-in, so newCount = 1
 
       // Check if this is a personal best
       isPersonalBest = newCount > (streakData.best_count || 0);
@@ -106,7 +110,8 @@ const handler = async (req: Request): Promise<Response> => {
       JSON.stringify({ 
         currentStreak: newCount,
         isPersonalBest,
-        bestStreak: Math.max(newCount, streakData?.best_count || 0)
+        bestStreak: Math.max(newCount, streakData?.best_count || 0),
+        wasStreakReset
       }),
       {
         status: 200,
