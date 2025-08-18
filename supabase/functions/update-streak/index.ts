@@ -89,21 +89,19 @@ const handler = async (req: Request): Promise<Response> => {
       isPersonalBest = true;
     }
 
-    // Update or insert streak data
-    const { error: upsertError } = await supabaseClient
+    // Update existing streak data
+    const { error: updateError } = await supabaseClient
       .from('streaks')
-      .upsert({
-        user_id: userId,
-        streak_type: streakType,
+      .update({
         current_count: newCount,
         best_count: Math.max(newCount, streakData?.best_count || 0),
         last_updated: today
-      }, {
-        onConflict: 'user_id,streak_type'
-      });
+      })
+      .eq('user_id', userId)
+      .eq('streak_type', streakType);
 
-    if (upsertError) {
-      throw upsertError;
+    if (updateError) {
+      throw updateError;
     }
 
     console.log(`Streak updated for user ${userId}: ${newCount} days (Personal best: ${isPersonalBest})`);
