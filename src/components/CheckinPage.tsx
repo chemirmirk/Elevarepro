@@ -81,14 +81,14 @@ export const CheckinPage = () => {
     try {
       const { data, error } = await supabase
         .from('check_ins')
-        .select('mood')
+        .select('mood, date')
         .eq('user_id', user.id)
         .not('mood', 'is', null)
-        .order('created_at', { ascending: false })
+        .order('date', { ascending: true })
         .limit(7);
 
       if (error) throw error;
-      setMoodData(data?.map(d => d.mood).reverse() || []);
+      setMoodData(data?.map(d => d.mood) || []);
     } catch (error) {
       console.error('Error loading mood data:', error);
     }
@@ -177,6 +177,7 @@ export const CheckinPage = () => {
       setHasCheckedInToday(true);
       checkTodayCheckIn();
       loadRecentMoodData();
+      loadStreakData();
       
     } catch (error) {
       console.error('Error saving check-in:', error);
@@ -291,8 +292,11 @@ export const CheckinPage = () => {
                 const moodValue = moodData[index] || 0;
                 const height = moodValue > 0 ? (moodValue / 5) * 100 : 10;
                 const moodEmoji = moodEmojis.find(m => m.value === moodValue);
-                const dayIndex = (new Date().getDay() - 6 + index + 7) % 7;
+                const today = new Date();
+                const dayDate = new Date(today);
+                dayDate.setDate(today.getDate() - 6 + index);
                 const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+                const dayName = dayNames[dayDate.getDay()];
                 
                 return (
                   <div key={index} className="flex-1 flex flex-col items-center">
@@ -301,9 +305,9 @@ export const CheckinPage = () => {
                         moodValue > 0 ? 'bg-secondary' : 'bg-muted border border-dashed border-muted-foreground/30'
                       }`}
                       style={{ height: `${height}%` }}
-                      title={moodEmoji ? `${dayNames[dayIndex]}: ${moodEmoji.label}` : `${dayNames[dayIndex]}: No data`}
+                      title={moodEmoji ? `${dayName}: ${moodEmoji.label}` : `${dayName}: No data`}
                     />
-                    <span className="text-xs text-muted-foreground mt-1">{dayNames[dayIndex]}</span>
+                    <span className="text-xs text-muted-foreground mt-1">{dayName}</span>
                   </div>
                 );
               })}

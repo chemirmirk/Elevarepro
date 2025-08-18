@@ -98,6 +98,8 @@ const handler = async (req: Request): Promise<Response> => {
         current_count: newCount,
         best_count: Math.max(newCount, streakData?.best_count || 0),
         last_updated: today
+      }, {
+        onConflict: 'user_id,streak_type'
       });
 
     if (upsertError) {
