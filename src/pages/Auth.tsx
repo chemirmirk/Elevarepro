@@ -205,13 +205,13 @@ export default function Auth() {
                       )}
                     </Button>
                     <div className="text-center">
-                      <button
-                        type="button"
-                        onClick={() => setShowPasswordReset(true)}
-                        className="text-sm text-primary hover:underline"
-                      >
-                        Forgot password?
-                      </button>
+                <button
+                  type="button"
+                  onClick={() => setShowPasswordReset(true)}
+                  className="text-sm text-primary hover:underline"
+                >
+                  Forgot Password?
+                </button>
                     </div>
                   </form>
                 ) : (
