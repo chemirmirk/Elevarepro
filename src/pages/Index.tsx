@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { useProfile } from "@/hooks/useProfile";
 import { supabase } from "@/integrations/supabase/client";
 import { MobileTabBar } from "@/components/MobileTabBar";
 import { DashboardPage } from "@/components/DashboardPage";
@@ -10,14 +11,21 @@ import { PhotosPage } from "@/components/PhotosPage";
 import { ChatPage } from "@/components/ChatPage";
 import { GoalsPage } from "@/components/GoalsPage";
 import { OnboardingFlow } from "@/components/OnboardingFlow";
+import { ProfilePictureUpload } from "@/components/ProfilePictureUpload";
 import { Button } from "@/components/ui/button";
-import { LogOut, User } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { LogOut, User, Settings } from "lucide-react";
 
 const Index = () => {
   const { user, signOut } = useAuth();
+  const { profile, updateProfile } = useProfile();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isOnboarded, setIsOnboarded] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [profileDialogOpen, setProfileDialogOpen] = useState(false);
+  const [editName, setEditName] = useState('');
 
   useEffect(() => {
     const checkOnboardingStatus = async () => {
@@ -49,6 +57,28 @@ const Index = () => {
     checkOnboardingStatus();
   }, [user]);
 
+  useEffect(() => {
+    if (profile?.name) {
+      setEditName(profile.name);
+    }
+  }, [profile]);
+
+  const handleProfileImageUpdate = (newImageUrl: string | null) => {
+    if (profile) {
+      // Update the local profile state immediately for better UX
+      // The actual database update is handled by the ProfilePictureUpload component
+    }
+  };
+
+  const handleNameUpdate = async () => {
+    try {
+      await updateProfile({ name: editName.trim() });
+      setProfileDialogOpen(false);
+    } catch (error) {
+      console.error('Error updating name:', error);
+    }
+  };
+
   const handleOnboardingComplete = (data: any) => {
     console.log('Onboarding completed with data:', data);
     setIsOnboarded(true);
@@ -70,10 +100,14 @@ const Index = () => {
       <div className="min-h-screen bg-background">
         {/* User info header */}
         <div className="flex justify-between items-center p-4 border-b bg-card">
-          <div className="flex items-center gap-2">
-            <User className="h-5 w-5 text-primary" />
+          <div className="flex items-center gap-3">
+            <ProfilePictureUpload
+              currentImageUrl={profile?.profile_picture_url}
+              onImageUpdate={handleProfileImageUpdate}
+              size="sm"
+            />
             <span className="text-sm text-muted-foreground">
-              Welcome, {user?.user_metadata?.name || user?.email}
+              Welcome, {profile?.name || user?.user_metadata?.name || user?.email}
             </span>
           </div>
           <Button variant="outline" size="sm" onClick={signOut}>
@@ -111,10 +145,51 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       {/* User info header */}
       <div className="flex justify-between items-center p-4 border-b bg-card">
-        <div className="flex items-center gap-2">
-          <User className="h-5 w-5 text-primary" />
+        <div className="flex items-center gap-3">
+          <Dialog open={profileDialogOpen} onOpenChange={setProfileDialogOpen}>
+            <DialogTrigger asChild>
+              <button className="focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-full">
+                <ProfilePictureUpload
+                  currentImageUrl={profile?.profile_picture_url}
+                  onImageUpdate={handleProfileImageUpdate}
+                  size="sm"
+                />
+              </button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>Edit Profile</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-6">
+                <div className="flex justify-center">
+                  <ProfilePictureUpload
+                    currentImageUrl={profile?.profile_picture_url}
+                    onImageUpdate={handleProfileImageUpdate}
+                    size="lg"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="name">Display Name</Label>
+                  <Input
+                    id="name"
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    placeholder="Enter your name"
+                  />
+                </div>
+                <div className="flex justify-end gap-2">
+                  <Button variant="outline" onClick={() => setProfileDialogOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button onClick={handleNameUpdate}>
+                    Save Changes
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
           <span className="text-sm text-muted-foreground">
-            Welcome, {user?.user_metadata?.name || user?.email}
+            Welcome, {profile?.name || user?.user_metadata?.name || user?.email}
           </span>
         </div>
         <Button variant="outline" size="sm" onClick={signOut}>
