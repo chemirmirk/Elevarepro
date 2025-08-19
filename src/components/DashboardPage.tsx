@@ -6,6 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Flame, Target, Calendar, TrendingUp, Award, Clock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { GoalsDashboard } from "@/components/GoalsDashboard";
+import { GoalNotifications } from "@/components/GoalNotifications";
 
 export const DashboardPage = () => {
   const { user } = useAuth();
@@ -172,6 +174,12 @@ export const DashboardPage = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Goals Notifications */}
+      <GoalNotifications className="shadow-card" />
+
+      {/* Goals Dashboard */}
+      <GoalsDashboard className="shadow-card" />
 
       {/* Weekly Progress */}
       <Card className="shadow-card">

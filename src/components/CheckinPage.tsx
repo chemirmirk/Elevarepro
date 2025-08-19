@@ -4,7 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Heart, CheckCircle, MessageSquare, Target, TrendingUp, Calendar } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Heart, CheckCircle, MessageSquare, Target, TrendingUp, Calendar, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
@@ -28,14 +31,82 @@ export const CheckinPage = () => {
   const [moodData, setMoodData] = useState<number[]>([]);
   const [hasCheckedInToday, setHasCheckedInToday] = useState(false);
   const [todayCheckIn, setTodayCheckIn] = useState<any>(null);
+  const [activeGoals, setActiveGoals] = useState<any[]>([]);
+  const [goalProgress, setGoalProgress] = useState<{ [key: string]: number }>({});
+  const [goalProgressDialogOpen, setGoalProgressDialogOpen] = useState(false);
 
   useEffect(() => {
     if (user) {
       loadStreakData();
       loadRecentMoodData();
       checkTodayCheckIn();
+      loadActiveGoals();
     }
   }, [user]);
+
+  const loadActiveGoals = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('goals')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('is_active', true)
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+      
+      setActiveGoals(data || []);
+      
+      // Initialize goal progress tracking for today
+      const today = new Date().toISOString().split('T')[0];
+      const { data: progressData, error: progressError } = await supabase
+        .from('goal_progress')
+        .select('goal_id, progress_amount')
+        .eq('user_id', user.id)
+        .eq('recorded_date', today);
+      
+      if (!progressError && progressData) {
+        const todayProgress: { [key: string]: number } = {};
+        progressData.forEach((progress: any) => {
+          todayProgress[progress.goal_id] = progress.progress_amount;
+        });
+        setGoalProgress(todayProgress);
+      }
+    } catch (error) {
+      console.error('Error loading active goals:', error);
+    }
+  };
+
+  const updateGoalProgress = async (goalId: string, amount: number) => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('goal-progress-tracker', {
+        body: {
+          action: 'updateProgress',
+          userId: user.id,
+          goalId,
+          progressAmount: amount,
+          notes: `Updated via daily check-in on ${new Date().toDateString()}`
+        }
+      });
+
+      if (error) throw error;
+      
+      if (data.success) {
+        toast.success(data.message);
+        setGoalProgress(prev => ({ ...prev, [goalId]: amount }));
+        
+        // Refresh goals to show updated totals
+        loadActiveGoals();
+      }
+    } catch (error) {
+      console.error('Error updating goal progress:', error);
+      toast.error("Failed to update goal progress. Please try again.");
+    }
+  };
 
   const loadStreakData = async () => {
     if (!user) return;
@@ -356,6 +427,127 @@ export const CheckinPage = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Goal Progress Tracking */}
+      {activeGoals.length > 0 && (
+        <Card className="shadow-card">
+          <CardHeader className="pb-4">
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <Target className="h-5 w-5 text-primary" />
+                Today's Goal Progress
+              </CardTitle>
+              <Dialog open={goalProgressDialogOpen} onOpenChange={setGoalProgressDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <Plus className="h-4 w-4 mr-1" />
+                    Update Goals
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Update Goal Progress</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4 max-h-96 overflow-y-auto">
+                    {activeGoals.map((goal) => (
+                      <div key={goal.id} className="space-y-3 p-4 border rounded-lg">
+                        <div>
+                          <h4 className="font-medium capitalize">{goal.goal_type.replace('_', ' ')}</h4>
+                          {goal.goal_description && (
+                            <p className="text-sm text-muted-foreground">{goal.goal_description}</p>
+                          )}
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Total Progress: {goal.current_amount}/{goal.target_amount} {goal.target_unit}
+                          </p>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label htmlFor={`progress-${goal.id}`}>Today's Progress</Label>
+                          <div className="flex gap-2">
+                            <Input
+                              id={`progress-${goal.id}`}
+                              type="number"
+                              min="0"
+                              value={goalProgress[goal.id] || 0}
+                              onChange={(e) => setGoalProgress(prev => ({ 
+                                ...prev, 
+                                [goal.id]: parseInt(e.target.value) || 0 
+                              }))}
+                              className="flex-1"
+                            />
+                            <Button
+                              size="sm"
+                              onClick={() => updateGoalProgress(goal.id, goalProgress[goal.id] || 0)}
+                            >
+                              Save
+                            </Button>
+                          </div>
+                        </div>
+
+                        {goal.end_date && (
+                          <div className="text-xs text-muted-foreground">
+                            {(() => {
+                              const today = new Date();
+                              const deadline = new Date(goal.end_date);
+                              const daysRemaining = Math.ceil((deadline.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+                              
+                              if (daysRemaining < 0) {
+                                return <span className="text-destructive">Overdue by {Math.abs(daysRemaining)} days</span>;
+                              } else if (daysRemaining === 0) {
+                                return <span className="text-destructive">Due today!</span>;
+                              } else if (daysRemaining <= 3) {
+                                return <span className="text-warning">{daysRemaining} days remaining</span>;
+                              } else {
+                                return <span>{daysRemaining} days remaining</span>;
+                              }
+                            })()}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {activeGoals.slice(0, 2).map((goal) => (
+                <div key={goal.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                  <div className="flex-1">
+                    <p className="font-medium text-sm capitalize">{goal.goal_type.replace('_', ' ')}</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <Progress 
+                        value={Math.min((goal.current_amount / goal.target_amount) * 100, 100)} 
+                        className="flex-1 h-2"
+                      />
+                      <span className="text-xs text-muted-foreground">
+                        {goal.current_amount}/{goal.target_amount}
+                      </span>
+                    </div>
+                  </div>
+                  <Badge variant="outline" className="text-xs">
+                    Today: +{goalProgress[goal.id] || 0}
+                  </Badge>
+                </div>
+              ))}
+              
+              {activeGoals.length > 2 && (
+                <div className="text-center">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => setGoalProgressDialogOpen(true)}
+                    className="text-xs"
+                  >
+                    View all {activeGoals.length} goals
+                  </Button>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Progress Notes */}
       <Card className="shadow-card">

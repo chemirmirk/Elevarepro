@@ -7,8 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, Target, Edit } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
+import { Plus, Target, Edit, Calendar, Clock, TrendingUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 
 interface Goal {
   id: string;
@@ -17,6 +20,13 @@ interface Goal {
   current_amount: number;
   target_unit: string;
   is_active: boolean;
+  start_date?: string;
+  end_date?: string;
+  duration_days?: number;
+  goal_description?: string;
+  reminder_frequency?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export const GoalsPage = () => {
@@ -324,23 +334,89 @@ export const GoalsPage = () => {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Progress</span>
-                    <span className="text-sm font-medium">
-                      {goal.current_amount} / {goal.target_amount} {goal.target_unit}
-                    </span>
-                  </div>
-                  <div className="w-full bg-muted rounded-full h-2">
-                    <div 
-                      className="bg-primary h-2 rounded-full transition-all"
-                      style={{ width: `${Math.min((goal.current_amount / goal.target_amount) * 100, 100)}%` }}
+                <div className="space-y-4">
+                  {/* Goal Description */}
+                  {goal.goal_description && (
+                    <div className="p-3 bg-muted/30 rounded-lg">
+                      <p className="text-sm text-muted-foreground">{goal.goal_description}</p>
+                    </div>
+                  )}
+                  
+                  {/* Timeline Info */}
+                  {goal.end_date && (
+                    <div className="flex items-center justify-between text-sm">
+                      <div className="flex items-center gap-2">
+                        <Calendar className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-muted-foreground">Deadline:</span>
+                        <span className="font-medium">
+                          {new Date(goal.end_date).toLocaleDateString()}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Clock className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-muted-foreground">
+                          {(() => {
+                            const today = new Date();
+                            const deadline = new Date(goal.end_date);
+                            const daysRemaining = Math.ceil((deadline.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+                            
+                            if (daysRemaining < 0) {
+                              return <Badge variant="destructive">Overdue by {Math.abs(daysRemaining)} days</Badge>;
+                            } else if (daysRemaining === 0) {
+                              return <Badge variant="destructive">Due today</Badge>;
+                            } else if (daysRemaining <= 3) {
+                              return <Badge variant="secondary">{daysRemaining} days left</Badge>;
+                            } else {
+                              return <span className="text-sm">{daysRemaining} days left</span>;
+                            }
+                          })()}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Progress */}
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">Progress</span>
+                      <span className="text-sm font-medium">
+                        {goal.current_amount} / {goal.target_amount} {goal.target_unit}
+                      </span>
+                    </div>
+                    
+                    <Progress 
+                      value={Math.min((goal.current_amount / goal.target_amount) * 100, 100)} 
+                      className="h-3"
                     />
-                  </div>
-                  <div className="text-center">
-                    <span className="text-sm font-medium text-primary">
-                      {Math.round((goal.current_amount / goal.target_amount) * 100)}% complete
-                    </span>
+                    
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="font-medium text-primary">
+                        {Math.round((goal.current_amount / goal.target_amount) * 100)}% complete
+                      </span>
+                      
+                      {goal.end_date && goal.duration_days && (
+                        <div className="flex items-center gap-1">
+                          <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-muted-foreground">
+                            {(() => {
+                              const today = new Date();
+                              const deadline = new Date(goal.end_date);
+                              const startDate = new Date(goal.start_date || today);
+                              const totalDays = goal.duration_days;
+                              const daysPassed = Math.max(0, Math.ceil((today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)));
+                              const expectedProgress = Math.min((daysPassed / totalDays) * 100, 100);
+                              const actualProgress = (goal.current_amount / goal.target_amount) * 100;
+                              
+                              if (actualProgress >= expectedProgress) {
+                                return <span className="text-success">On track</span>;
+                              } else {
+                                return <span className="text-warning">Behind schedule</span>;
+                              }
+                            })()}
+                          </span>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </CardContent>

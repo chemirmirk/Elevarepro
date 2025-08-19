@@ -140,13 +140,57 @@ export type Database = {
         }
         Relationships: []
       }
+      goal_progress: {
+        Row: {
+          created_at: string
+          goal_id: string
+          id: string
+          notes: string | null
+          progress_amount: number
+          recorded_date: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          goal_id: string
+          id?: string
+          notes?: string | null
+          progress_amount?: number
+          recorded_date?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          goal_id?: string
+          id?: string
+          notes?: string | null
+          progress_amount?: number
+          recorded_date?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "goal_progress_goal_id_fkey"
+            columns: ["goal_id"]
+            isOneToOne: false
+            referencedRelation: "goals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       goals: {
         Row: {
           created_at: string
           current_amount: number | null
+          duration_days: number | null
+          end_date: string | null
+          goal_description: string | null
           goal_type: string
           id: string
           is_active: boolean | null
+          last_reminder_sent: string | null
+          reminder_frequency: string | null
+          start_date: string | null
           target_amount: number | null
           target_unit: string | null
           updated_at: string
@@ -155,9 +199,15 @@ export type Database = {
         Insert: {
           created_at?: string
           current_amount?: number | null
+          duration_days?: number | null
+          end_date?: string | null
+          goal_description?: string | null
           goal_type: string
           id?: string
           is_active?: boolean | null
+          last_reminder_sent?: string | null
+          reminder_frequency?: string | null
+          start_date?: string | null
           target_amount?: number | null
           target_unit?: string | null
           updated_at?: string
@@ -166,9 +216,15 @@ export type Database = {
         Update: {
           created_at?: string
           current_amount?: number | null
+          duration_days?: number | null
+          end_date?: string | null
+          goal_description?: string | null
           goal_type?: string
           id?: string
           is_active?: boolean | null
+          last_reminder_sent?: string | null
+          reminder_frequency?: string | null
+          start_date?: string | null
           target_amount?: number | null
           target_unit?: string | null
           updated_at?: string
