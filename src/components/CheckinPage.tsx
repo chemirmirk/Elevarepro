@@ -124,14 +124,22 @@ export const CheckinPage = () => {
       if (data) {
         setHasCheckedInToday(true);
         setTodayCheckIn(data);
-        // Populate form with today's data
-        setSelectedMood(data.mood);
-        setProgressNotes(data.progress_notes || "");
-        setGoalsAchieved(data.goals_achieved || "");
-        setChallengesFaced(data.challenges || "");
+        // Only populate form if this is truly today's check-in
+        const checkInDate = new Date(data.date).toISOString().split('T')[0];
+        if (checkInDate === today) {
+          setSelectedMood(data.mood);
+          setProgressNotes(data.progress_notes || "");
+          setGoalsAchieved(data.goals_achieved || "");
+          setChallengesFaced(data.challenges || "");
+        }
       } else {
         setHasCheckedInToday(false);
         setTodayCheckIn(null);
+        // Clear form for new day
+        setSelectedMood(null);
+        setProgressNotes("");
+        setGoalsAchieved("");
+        setChallengesFaced("");
       }
     } catch (error) {
       console.error('Error checking today\'s check-in:', error);
@@ -149,7 +157,14 @@ export const CheckinPage = () => {
       const today = new Date().toISOString().split('T')[0];
       
       if (hasCheckedInToday && todayCheckIn) {
-        // Update existing check-in
+        // Validate that we're only updating today's check-in
+        const checkInDate = new Date(todayCheckIn.date).toISOString().split('T')[0];
+        if (checkInDate !== today) {
+          toast.error("You can only edit today's check-in. Previous check-ins are locked.");
+          return;
+        }
+        
+        // Update existing check-in (only for today)
         const { error: checkinError } = await supabase
           .from('check_ins')
           .update({
@@ -158,7 +173,8 @@ export const CheckinPage = () => {
             goals_achieved: goalsAchieved.trim(),
             challenges: challengesFaced.trim(),
           })
-          .eq('id', todayCheckIn.id);
+          .eq('id', todayCheckIn.id)
+          .eq('date', today); // Extra safety - ensure we're only updating today's record
 
         if (checkinError) throw checkinError;
         toast.success("Check-in updated successfully!");
@@ -168,7 +184,7 @@ export const CheckinPage = () => {
           await updateDailyCheckinStreak();
         }
       } else {
-        // Create new check-in
+        // Create new check-in (only allowed for today)
         const { error: checkinError } = await supabase
           .from('check_ins')
           .insert({
