@@ -150,31 +150,44 @@ export const CheckinPage = () => {
     if (!user) return;
     
     try {
-      // Get the last 7 days of mood data
+      // Get mood data from the last 7 days
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
+      const sevenDaysAgoStr = sevenDaysAgo.toISOString().split('T')[0];
+      
       const { data, error } = await supabase
         .from('check_ins')
         .select('mood, date')
         .eq('user_id', user.id)
         .not('mood', 'is', null)
+        .gte('date', sevenDaysAgoStr)
         .order('date', { ascending: true });
 
       if (error) throw error;
       
-      // Create array for last 7 days
+      // Create array for last 7 days with proper date handling
       const last7Days = [];
       for (let i = 6; i >= 0; i--) {
         const date = new Date();
         date.setDate(date.getDate() - i);
+        // Use consistent date format for comparison
         const dateStr = date.toISOString().split('T')[0];
         
         // Find mood for this specific date
-        const moodEntry = data?.find(entry => entry.date === dateStr);
+        const moodEntry = data?.find(entry => {
+          // Ensure both dates are in the same format for comparison
+          const entryDate = new Date(entry.date).toISOString().split('T')[0];
+          return entryDate === dateStr;
+        });
+        
         last7Days.push(moodEntry ? moodEntry.mood : 0);
       }
       
+      console.log('Loaded mood data for last 7 days:', last7Days);
       setMoodData(last7Days);
     } catch (error) {
       console.error('Error loading mood data:', error);
+      setMoodData([0, 0, 0, 0, 0, 0, 0]); // Fallback to empty data
     }
   };
 
