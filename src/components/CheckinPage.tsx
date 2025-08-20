@@ -450,16 +450,30 @@ export const CheckinPage = () => {
                 const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
                 const dayName = dayNames[date.getDay()];
                 
+                // Enhanced mood color mapping for better visibility
+                const getMoodColor = (mood: number) => {
+                  switch (mood) {
+                    case 1: return 'bg-red-400';     // Very Bad - Red
+                    case 2: return 'bg-orange-400';  // Bad - Orange  
+                    case 3: return 'bg-yellow-400';  // Okay - Yellow
+                    case 4: return 'bg-blue-400';    // Good - Blue
+                    case 5: return 'bg-green-400';   // Great - Green
+                    default: return 'bg-muted border border-dashed border-muted-foreground/30';
+                  }
+                };
+                
+                console.log(`Rendering mood bar ${index}: value=${moodValue}, height=${height}%, day=${dayName}`);
+                
                 return (
                   <div key={index} className="flex-1 flex flex-col items-center">
                     <div 
-                      className={`w-full rounded-sm transition-all duration-300 ${
-                        moodValue > 0 ? 'bg-secondary' : 'bg-muted border border-dashed border-muted-foreground/30'
-                      }`}
+                      className={`w-full rounded-sm transition-all duration-300 min-h-[4px] ${getMoodColor(moodValue)}`}
                       style={{ height: `${height}%` }}
                       title={moodEmoji ? `${dayName}: ${moodEmoji.label} (${moodValue}/5)` : `${dayName}: No data`}
                     />
                     <span className="text-xs text-muted-foreground mt-1">{dayName}</span>
+                    {/* Debug info - remove in production */}
+                    <span className="text-xs text-red-500">{moodValue}</span>
                   </div>
                 );
               })}
