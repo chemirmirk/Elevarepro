@@ -41,6 +41,7 @@ export const CheckinPage = () => {
       loadRecentMoodData();
       checkTodayCheckIn();
       loadActiveGoals();
+      resetDailyProgress(); // Reset progress for new day
     }
   }, [user]);
 
@@ -48,6 +49,8 @@ export const CheckinPage = () => {
     if (!user) return;
     
     try {
+      console.log('Loading active goals for user:', user.id);
+      
       const { data, error } = await supabase
         .from('goals')
         .select('*')
@@ -57,6 +60,7 @@ export const CheckinPage = () => {
 
       if (error) throw error;
       
+      console.log('Loaded active goals:', data);
       setActiveGoals(data || []);
       
       // Initialize goal progress tracking for today
@@ -68,11 +72,15 @@ export const CheckinPage = () => {
         .eq('recorded_date', today);
       
       if (!progressError && progressData) {
+        console.log('Loaded today\'s progress data:', progressData);
         const todayProgress: { [key: string]: number } = {};
         progressData.forEach((progress: any) => {
           todayProgress[progress.goal_id] = progress.progress_amount;
         });
         setGoalProgress(todayProgress);
+        console.log('Set goal progress state:', todayProgress);
+      } else if (progressError) {
+        console.error('Error loading goal progress:', progressError);
       }
     } catch (error) {
       console.error('Error loading active goals:', error);
@@ -83,6 +91,8 @@ export const CheckinPage = () => {
     if (!user) return;
     
     try {
+      console.log('Updating goal progress:', { goalId, amount, userId: user.id });
+      
       const { data, error } = await supabase.functions.invoke('goal-progress-tracker', {
         body: {
           action: 'updateProgress',
@@ -93,18 +103,40 @@ export const CheckinPage = () => {
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase function error:', error);
+        throw error;
+      }
       
-      if (data.success) {
+      console.log('Goal progress update response:', data);
+      
+      if (data?.success) {
         toast.success(data.message);
+        
+        // Update local state immediately for better UX
         setGoalProgress(prev => ({ ...prev, [goalId]: amount }));
         
         // Refresh goals to show updated totals
-        loadActiveGoals();
+        await loadActiveGoals();
+      } else {
+        console.error('Goal progress update failed:', data);
+        toast.error("Failed to update goal progress. Please try again.");
       }
     } catch (error) {
       console.error('Error updating goal progress:', error);
       toast.error("Failed to update goal progress. Please try again.");
+    }
+  };
+
+  const resetDailyProgress = () => {
+    // Reset goal progress state at the start of each day
+    const today = new Date().toISOString().split('T')[0];
+    const lastResetDate = localStorage.getItem(`lastProgressReset_${user?.id}`);
+    
+    if (lastResetDate !== today && user) {
+      console.log('Resetting daily progress for new day:', today);
+      setGoalProgress({});
+      localStorage.setItem(`lastProgressReset_${user.id}`, today);
     }
   };
 

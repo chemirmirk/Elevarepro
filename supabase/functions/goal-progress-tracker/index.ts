@@ -58,14 +58,18 @@ async function handleUpdateProgress(
   supabaseClient: any, 
   { userId, goalId, progressAmount, notes }: UpdateGoalProgressRequest
 ): Promise<Response> {
+  console.log('handleUpdateProgress called with:', { userId, goalId, progressAmount, notes });
+  
   if (!userId || !goalId || progressAmount === undefined) {
+    console.error('Missing required parameters:', { userId, goalId, progressAmount });
     throw new Error("Missing required parameters: userId, goalId, and progressAmount");
   }
 
   const today = new Date().toISOString().split('T')[0];
+  console.log('Processing for date:', today);
 
   // Record daily progress
-  const { error: progressError } = await supabaseClient
+  const { data: upsertData, error: progressError } = await supabaseClient
     .from('goal_progress')
     .upsert({
       goal_id: goalId,
@@ -74,10 +78,16 @@ async function handleUpdateProgress(
       notes: notes || null,
       recorded_date: today
     }, {
-      onConflict: 'goal_id, recorded_date'
-    });
+      onConflict: 'goal_id,recorded_date'
+    })
+    .select();
 
-  if (progressError) throw progressError;
+  if (progressError) {
+    console.error('Error upserting goal progress:', progressError);
+    throw progressError;
+  }
+  
+  console.log('Upserted goal progress:', upsertData);
 
   // Update goal's current_amount with total progress
   const { data: progressData, error: sumError } = await supabaseClient
@@ -86,17 +96,27 @@ async function handleUpdateProgress(
     .eq('goal_id', goalId)
     .eq('user_id', userId);
 
-  if (sumError) throw sumError;
+  if (sumError) {
+    console.error('Error fetching progress data for sum calculation:', sumError);
+    throw sumError;
+  }
 
-  const totalProgress = progressData.reduce((sum: number, record: any) => sum + record.progress_amount, 0);
+  const totalProgress = progressData?.reduce((sum: number, record: any) => sum + record.progress_amount, 0) || 0;
+  console.log('Calculated total progress:', totalProgress, 'from records:', progressData);
 
-  const { error: updateError } = await supabaseClient
+  const { data: updateData, error: updateError } = await supabaseClient
     .from('goals')
     .update({ current_amount: totalProgress })
     .eq('id', goalId)
-    .eq('user_id', userId);
+    .eq('user_id', userId)
+    .select();
 
-  if (updateError) throw updateError;
+  if (updateError) {
+    console.error('Error updating goal current_amount:', updateError);
+    throw updateError;
+  }
+  
+  console.log('Updated goal current_amount:', updateData);
 
   // Check if goal is completed
   const { data: goalData, error: goalError } = await supabaseClient
