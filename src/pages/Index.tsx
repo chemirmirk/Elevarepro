@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { LogOut, User, Settings } from "lucide-react";
+import { LogOut, User, Settings, Calendar, Bell } from "lucide-react";
 
 const Index = () => {
   const { user, signOut } = useAuth();
@@ -110,10 +110,30 @@ const Index = () => {
               Welcome, {profile?.name || user?.user_metadata?.name || user?.email}
             </span>
           </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant={activeTab === 'calendar' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setActiveTab('calendar')}
+            className="hidden sm:flex"
+          >
+            <Calendar className="h-4 w-4 mr-2" />
+            Calendar
+          </Button>
+          <Button
+            variant={activeTab === 'reminders' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setActiveTab('reminders')}
+            className="hidden sm:flex"
+          >
+            <Bell className="h-4 w-4 mr-2" />
+            Reminders
+          </Button>
           <Button variant="outline" size="sm" onClick={signOut}>
             <LogOut className="h-4 w-4 mr-2" />
             Sign Out
           </Button>
+        </div>
         </div>
         <OnboardingFlow onComplete={handleOnboardingComplete} />
       </div>
@@ -192,10 +212,50 @@ const Index = () => {
             Welcome, {profile?.name || user?.user_metadata?.name || user?.email}
           </span>
         </div>
-        <Button variant="outline" size="sm" onClick={signOut}>
-          <LogOut className="h-4 w-4 mr-2" />
-          Sign Out
-        </Button>
+        <div className="flex items-center gap-2">
+          {/* Desktop buttons with text */}
+          <Button
+            variant={activeTab === 'calendar' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setActiveTab('calendar')}
+            className="hidden md:flex"
+          >
+            <Calendar className="h-4 w-4 mr-2" />
+            Calendar
+          </Button>
+          <Button
+            variant={activeTab === 'reminders' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setActiveTab('reminders')}
+            className="hidden md:flex"
+          >
+            <Bell className="h-4 w-4 mr-2" />
+            Reminders
+          </Button>
+          
+          {/* Mobile icon-only buttons */}
+          <Button
+            variant={activeTab === 'calendar' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setActiveTab('calendar')}
+            className="md:hidden p-2"
+          >
+            <Calendar className="h-4 w-4" />
+          </Button>
+          <Button
+            variant={activeTab === 'reminders' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setActiveTab('reminders')}
+            className="md:hidden p-2"
+          >
+            <Bell className="h-4 w-4" />
+          </Button>
+          
+          <Button variant="outline" size="sm" onClick={signOut}>
+            <LogOut className="h-4 w-4 mr-2" />
+            <span className="hidden sm:inline">Sign Out</span>
+          </Button>
+        </div>
       </div>
       {renderActiveTab()}
       <MobileTabBar activeTab={activeTab} onTabChange={setActiveTab} />
