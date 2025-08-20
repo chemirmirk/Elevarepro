@@ -13,11 +13,11 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 
 const moodEmojis = [
-  { value: 1, emoji: "😢", label: "Very Bad", color: "text-red-500" },
-  { value: 2, emoji: "😕", label: "Bad", color: "text-orange-500" },
+  { value: 1, emoji: "😞", label: "Very Bad", color: "text-red-500" },
+  { value: 2, emoji: "🙁", label: "Bad", color: "text-orange-500" },
   { value: 3, emoji: "😐", label: "Okay", color: "text-yellow-500" },
-  { value: 4, emoji: "😊", label: "Good", color: "text-blue-500" },
-  { value: 5, emoji: "😄", label: "Great", color: "text-green-500" },
+  { value: 4, emoji: "🙂", label: "Good", color: "text-blue-500" },
+  { value: 5, emoji: "😀", label: "Great", color: "text-green-500" },
 ];
 
 export const CheckinPage = () => {
@@ -439,49 +439,72 @@ export const CheckinPage = () => {
               <TrendingUp className="h-4 w-4 text-secondary" />
               <span className="text-sm font-medium">7-Day Mood Trend</span>
             </div>
-            <div className="flex items-end justify-between gap-1 h-16 mb-2">
-              {moodData.map((moodValue, index) => {
-                const height = moodValue > 0 ? (moodValue / 5) * 100 : 10;
-                const moodEmoji = moodEmojis.find(m => m.value === moodValue);
-                
-                // Calculate the actual date for this position (last 7 days)
-                const date = new Date();
-                date.setDate(date.getDate() - (6 - index));
-                const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-                const dayName = dayNames[date.getDay()];
-                
-                // Enhanced mood color mapping for better visibility
-                const getMoodColor = (mood: number) => {
-                  switch (mood) {
-                    case 1: return 'bg-red-400';     // Very Bad - Red
-                    case 2: return 'bg-orange-400';  // Bad - Orange  
-                    case 3: return 'bg-yellow-400';  // Okay - Yellow
-                    case 4: return 'bg-blue-400';    // Good - Blue
-                    case 5: return 'bg-green-400';   // Great - Green
-                    default: return 'bg-muted border border-dashed border-muted-foreground/30';
-                  }
-                };
-                
-                console.log(`Rendering mood bar ${index}: value=${moodValue}, height=${height}%, day=${dayName}`);
-                
-                return (
-                  <div key={index} className="flex-1 flex flex-col items-center">
-                    <div 
-                      className={`w-full rounded-sm transition-all duration-300 min-h-[4px] ${getMoodColor(moodValue)}`}
-                      style={{ height: `${height}%` }}
-                      title={moodEmoji ? `${dayName}: ${moodEmoji.label} (${moodValue}/5)` : `${dayName}: No data`}
-                    />
-                    <span className="text-xs text-muted-foreground mt-1">{dayName}</span>
-                    {/* Debug info - remove in production */}
-                    <span className="text-xs text-red-500">{moodValue}</span>
-                  </div>
-                );
-              })}
+            <div className="relative h-24 mb-4">
+              {/* Y-axis scale */}
+              <div className="absolute left-0 top-0 h-full flex flex-col justify-between text-xs text-muted-foreground">
+                <span>😀</span>
+                <span>🙂</span>
+                <span>😐</span>
+                <span>🙁</span>
+                <span>😞</span>
+              </div>
+              
+              {/* Grid lines */}
+              <div className="absolute left-6 top-0 right-0 h-full">
+                {[...Array(5)].map((_, i) => (
+                  <div 
+                    key={i}
+                    className="absolute w-full border-b border-muted/50"
+                    style={{ bottom: `${i * 25}%` }}
+                  />
+                ))}
+              </div>
+              
+              {/* Data points */}
+              <div className="absolute left-6 top-0 right-0 h-full flex items-end justify-between">
+                {moodData.map((moodValue, index) => {
+                  const moodEmoji = moodEmojis.find(m => m.value === moodValue);
+                  
+                  // Calculate the actual date for this position (last 7 days)
+                  const date = new Date();
+                  date.setDate(date.getDate() - (6 - index));
+                  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+                  const dayName = dayNames[date.getDay()];
+                  
+                  // Position emoji based on mood value (1-5 scale)
+                  const bottomPosition = moodValue > 0 ? ((moodValue - 1) / 4) * 100 : 0;
+                  
+                  console.log(`Rendering mood point ${index}: value=${moodValue}, emoji=${moodEmoji?.emoji}, day=${dayName}`);
+                  
+                  return (
+                    <div key={index} className="flex-1 flex flex-col items-center relative">
+                      {moodValue > 0 ? (
+                        <div 
+                          className="absolute text-2xl transition-all duration-300 hover:scale-125 cursor-pointer"
+                          style={{ bottom: `${bottomPosition}%` }}
+                          title={`${dayName}: ${moodEmoji?.label} (${moodValue}/5)`}
+                        >
+                          {moodEmoji?.emoji}
+                        </div>
+                      ) : (
+                        <div 
+                          className="absolute text-xs text-muted-foreground/50"
+                          style={{ bottom: '0%' }}
+                          title={`${dayName}: No data`}
+                        >
+                          ○
+                        </div>
+                      )}
+                      <span className="absolute -bottom-6 text-xs text-muted-foreground">{dayName}</span>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-            <div className="flex justify-between text-xs text-muted-foreground">
-              <span>😢</span>
-              <span className="text-center">Mood Scale</span>
-              <span>😄</span>
+            <div className="flex justify-between text-xs text-muted-foreground mt-2">
+              <span>Past</span>
+              <span className="text-center">Timeline</span>
+              <span>Today</span>
             </div>
           </div>
         </CardContent>
