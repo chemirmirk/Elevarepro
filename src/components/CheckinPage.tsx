@@ -434,77 +434,110 @@ export const CheckinPage = () => {
           </div>
           
           {/* Mood Trend */}
-          <div className="mt-4 p-3 bg-muted/30 rounded-lg">
-            <div className="flex items-center gap-2 mb-2">
-              <TrendingUp className="h-4 w-4 text-secondary" />
-              <span className="text-sm font-medium">7-Day Mood Trend</span>
+          <div className="mt-4 p-4 bg-gradient-to-br from-muted/20 to-muted/40 rounded-lg border border-muted/30">
+            <div className="flex items-center gap-2 mb-4">
+              <TrendingUp className="h-5 w-5 text-primary" />
+              <span className="text-sm font-semibold">7-Day Mood Trend</span>
             </div>
-            <div className="relative h-24 mb-4">
-              {/* Y-axis scale */}
-              <div className="absolute left-0 top-0 h-full flex flex-col justify-between text-xs text-muted-foreground">
-                <span>😀</span>
-                <span>🙂</span>
+            <div className="relative h-32 mb-8">
+              {/* Y-axis emoji scale */}
+              <div className="absolute left-0 top-0 h-full flex flex-col justify-between text-lg">
+                <span className="transform -translate-y-2">😀</span>
+                <span className="transform -translate-y-1">🙂</span>
                 <span>😐</span>
-                <span>🙁</span>
-                <span>😞</span>
+                <span className="transform translate-y-1">🙁</span>
+                <span className="transform translate-y-2">😞</span>
               </div>
               
               {/* Grid lines */}
-              <div className="absolute left-6 top-0 right-0 h-full">
+              <div className="absolute left-8 top-0 right-0 h-full">
                 {[...Array(5)].map((_, i) => (
                   <div 
                     key={i}
-                    className="absolute w-full border-b border-muted/50"
+                    className="absolute w-full border-b border-muted/30"
                     style={{ bottom: `${i * 25}%` }}
                   />
                 ))}
               </div>
               
-              {/* Data points */}
-              <div className="absolute left-6 top-0 right-0 h-full flex items-end justify-between">
-                {moodData.map((moodValue, index) => {
-                  const moodEmoji = moodEmojis.find(m => m.value === moodValue);
+              {/* Chart area with SVG for line */}
+              <div className="absolute left-8 top-0 right-0 h-full">
+                <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+                  {/* Line connecting data points */}
+                  <path
+                    d={moodData.map((moodValue, index) => {
+                      const x = (index / (moodData.length - 1)) * 100;
+                      const y = moodValue > 0 ? 100 - ((moodValue - 1) / 4) * 100 : 100;
+                      return `${index === 0 ? 'M' : 'L'} ${x} ${y}`;
+                    }).join(' ')}
+                    fill="none"
+                    stroke="hsl(var(--primary))"
+                    strokeWidth="2"
+                    className="drop-shadow-sm"
+                    vectorEffect="non-scaling-stroke"
+                  />
                   
-                  // Calculate the actual date for this position (last 7 days)
-                  const date = new Date();
-                  date.setDate(date.getDate() - (6 - index));
-                  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-                  const dayName = dayNames[date.getDay()];
-                  
-                  // Position emoji based on mood value (1-5 scale)
-                  const bottomPosition = moodValue > 0 ? ((moodValue - 1) / 4) * 100 : 0;
-                  
-                  console.log(`Rendering mood point ${index}: value=${moodValue}, emoji=${moodEmoji?.emoji}, day=${dayName}`);
-                  
-                  return (
-                    <div key={index} className="flex-1 flex flex-col items-center relative">
-                      {moodValue > 0 ? (
-                        <div 
-                          className="absolute text-2xl transition-all duration-300 hover:scale-125 cursor-pointer"
-                          style={{ bottom: `${bottomPosition}%` }}
-                          title={`${dayName}: ${moodEmoji?.label} (${moodValue}/5)`}
-                        >
-                          {moodEmoji?.emoji}
-                        </div>
-                      ) : (
-                        <div 
-                          className="absolute text-xs text-muted-foreground/50"
-                          style={{ bottom: '0%' }}
-                          title={`${dayName}: No data`}
-                        >
-                          ○
-                        </div>
-                      )}
-                      <span className="absolute -bottom-6 text-xs text-muted-foreground">{dayName}</span>
-                    </div>
-                  );
-                })}
+                  {/* Gradient area under the line */}
+                  <defs>
+                    <linearGradient id="moodGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                      <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity="0.2" />
+                      <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity="0.05" />
+                    </linearGradient>
+                  </defs>
+                  <path
+                    d={`${moodData.map((moodValue, index) => {
+                      const x = (index / (moodData.length - 1)) * 100;
+                      const y = moodValue > 0 ? 100 - ((moodValue - 1) / 4) * 100 : 100;
+                      return `${index === 0 ? 'M' : 'L'} ${x} ${y}`;
+                    }).join(' ')} L 100 100 L 0 100 Z`}
+                    fill="url(#moodGradient)"
+                  />
+                </svg>
+                
+                {/* Data points overlaid on the line */}
+                <div className="absolute inset-0 flex items-end justify-between">
+                  {moodData.map((moodValue, index) => {
+                    const moodEmoji = moodEmojis.find(m => m.value === moodValue);
+                    
+                    // Calculate the actual date for this position (last 7 days)
+                    const date = new Date();
+                    date.setDate(date.getDate() - (6 - index));
+                    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+                    const dayName = dayNames[date.getDay()];
+                    
+                    // Position based on mood value (1-5 scale)
+                    const bottomPosition = moodValue > 0 ? ((moodValue - 1) / 4) * 100 : 0;
+                    
+                    return (
+                      <div key={index} className="flex-1 flex flex-col items-center relative">
+                        {moodValue > 0 ? (
+                          <div 
+                            className="absolute bg-background rounded-full p-1 border-2 border-primary shadow-lg text-xl transition-all duration-300 hover:scale-125 cursor-pointer z-10"
+                            style={{ bottom: `${bottomPosition}%`, transform: 'translateY(50%)' }}
+                            title={`${dayName}: ${moodEmoji?.label} (${moodValue}/5)`}
+                          >
+                            {moodEmoji?.emoji}
+                          </div>
+                        ) : (
+                          <div 
+                            className="absolute bg-muted/50 rounded-full w-6 h-6 flex items-center justify-center text-xs text-muted-foreground border border-muted"
+                            style={{ bottom: '0%', transform: 'translateY(50%)' }}
+                            title={`${dayName}: No data`}
+                          >
+                            ?
+                          </div>
+                        )}
+                        <span className="absolute -bottom-8 text-xs text-muted-foreground font-medium">{dayName}</span>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             </div>
-            <div className="flex justify-between text-xs text-muted-foreground mt-2">
-              <span>Past</span>
-              <span className="text-center">Timeline</span>
-              <span>Today</span>
+            <div className="flex justify-between text-xs text-muted-foreground/80 mt-4 px-2">
+              <span className="font-medium">Past Week</span>
+              <span className="text-center font-medium">Timeline</span>
+              <span className="font-medium">Today</span>
             </div>
           </div>
         </CardContent>
