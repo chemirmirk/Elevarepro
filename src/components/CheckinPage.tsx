@@ -319,6 +319,9 @@ export const CheckinPage = () => {
         await updateDailyCheckinStreak();
       }
 
+      // Send automatic mood acknowledgment to chat
+      await sendMoodAcknowledgment(selectedMood, progressNotes, goalsAchieved, challengesFaced);
+
       // Always refresh all data after any check-in operation
       await loadRecentMoodData(); // Refresh mood data immediately
       await loadStreakData();     // Refresh streak data immediately
@@ -369,6 +372,68 @@ export const CheckinPage = () => {
     } catch (error) {
       console.error('Error updating streak:', error);
       toast.error("Failed to update streak data.");
+    }
+  };
+
+  const sendMoodAcknowledgment = async (moodValue: number, progress: string, achievements: string, challenges: string) => {
+    if (!user) return;
+    
+    try {
+      const moodEmoji = moodEmojis.find(m => m.value === moodValue);
+      const moodText = moodEmoji ? `${moodEmoji.emoji} (${moodEmoji.label})` : `Mood: ${moodValue}/5`;
+      
+      // Create a contextual message based on the check-in data
+      const checkInSummary = `I just completed my daily check-in! 
+
+My mood today: ${moodText}
+
+Progress: ${progress.substring(0, 100)}${progress.length > 100 ? '...' : ''}
+
+Goals achieved: ${achievements.substring(0, 100)}${achievements.length > 100 ? '...' : ''}
+
+Challenges: ${challenges.substring(0, 100)}${challenges.length > 100 ? '...' : ''}
+
+Please analyze my recent mood trend and provide personalized feedback based on my journey.`;
+
+      // Save user message to chat
+      await supabase
+        .from('chat_messages')
+        .insert({
+          user_id: user.id,
+          content: checkInSummary,
+          sender: 'user',
+          message_type: 'checkin_summary'
+        });
+
+      // Get AI response with mood trend context
+      const { data, error } = await supabase.functions.invoke('ai-chat', {
+        body: { 
+          message: checkInSummary,
+          chatHistory: [],
+          userContext: {
+            name: user.user_metadata?.name || 'there',
+            streak: currentStreak
+          }
+        }
+      });
+
+      if (!error && data?.response) {
+        // Save AI response to chat
+        await supabase
+          .from('chat_messages')
+          .insert({
+            user_id: user.id,
+            content: data.response,
+            sender: 'ai',
+            message_type: data.type || 'motivation'
+          });
+
+        // Show toast notification about Pursivo's response
+        toast.success("Pursivo has acknowledged your check-in! Visit the Chat tab to see your personalized feedback.");
+      }
+    } catch (error) {
+      console.error('Error sending mood acknowledgment:', error);
+      // Don't show error toast as this is a nice-to-have feature
     }
   };
 

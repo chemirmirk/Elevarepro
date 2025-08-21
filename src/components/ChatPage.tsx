@@ -152,14 +152,20 @@ export const ChatPage = () => {
         .eq('streak_type', 'daily_checkin')
         .single();
 
-      // Call getMotivation function
-      const { data, error } = await supabase.functions.invoke('get-motivation', {
+      // Call enhanced ai-chat function with mood trend data
+      const { data, error } = await supabase.functions.invoke('ai-chat', {
         body: { 
-          userName: profileData?.name || 'there',
-          goal: Array.isArray(userData?.goals) ? userData.goals[0] : 'building better habits',
-          streak: streakData?.current_count || 0,
-          challenge: Array.isArray(userData?.challenges) ? userData.challenges[0] : 'staying consistent',
-          userMessage: content.trim()
+          message: content.trim(),
+          chatHistory: messages.map(msg => ({
+            content: msg.content,
+            sender: msg.sender
+          })),
+          userContext: {
+            name: profileData?.name || 'there',
+            goals: userData?.goals,
+            streak: streakData?.current_count || 0,
+            challenges: userData?.challenges
+          }
         }
       });
 
@@ -167,10 +173,10 @@ export const ChatPage = () => {
 
       const aiMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
-        content: data.motivation,
+        content: data.response,
         sender: 'ai',
         timestamp: new Date(),
-        type: 'motivation'
+        type: data.type || 'motivation'
       };
       
       setMessages(prev => [...prev, aiMessage]);

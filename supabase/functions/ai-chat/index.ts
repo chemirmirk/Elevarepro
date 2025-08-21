@@ -1,5 +1,6 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.53.0';
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
 
@@ -15,26 +16,103 @@ serve(async (req) => {
   }
 
   try {
-    const { message, chatHistory } = await req.json();
+    const { message, chatHistory, userContext } = await req.json();
+    
+    // Initialize Supabase client
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      {
+        global: {
+          headers: {
+            authorization: req.headers.get('authorization') ?? '',
+          },
+        },
+      }
+    );
+
+    // Get current user
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) {
+      throw new Error('User not authenticated');
+    }
+
+    // Fetch 7-day mood trend data
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
+    
+    const { data: moodData, error: moodError } = await supabase
+      .from('check_ins')
+      .select('date, mood')
+      .eq('user_id', user.id)
+      .gte('date', sevenDaysAgo.toISOString().split('T')[0])
+      .order('date', { ascending: true });
+
+    if (moodError) {
+      console.error('Error fetching mood data:', moodError);
+    }
+
+    // Create 7-day mood trend with day names and emojis
+    const moodEmojis = [
+      { value: 1, emoji: "😞", label: "Very Bad" },
+      { value: 2, emoji: "🙁", label: "Bad" },
+      { value: 3, emoji: "😐", label: "Okay" },
+      { value: 4, emoji: "🙂", label: "Good" },
+      { value: 5, emoji: "😀", label: "Great" },
+    ];
+
+    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const moodTrend = [];
+    
+    for (let i = 0; i < 7; i++) {
+      const date = new Date();
+      date.setDate(date.getDate() - (6 - i));
+      const dayName = dayNames[date.getDay()];
+      const dateStr = date.toISOString().split('T')[0];
+      
+      const dayMood = moodData?.find(m => m.date === dateStr);
+      if (dayMood && dayMood.mood) {
+        const moodEmoji = moodEmojis.find(m => m.value === dayMood.mood);
+        moodTrend.push(`${dayName}: ${moodEmoji?.emoji} (${moodEmoji?.label})`);
+      } else {
+        moodTrend.push(`${dayName}: No check-in`);
+      }
+    }
+
+    const moodTrendContext = moodTrend.length > 0 
+      ? `\n\n**USER'S 7-DAY MOOD TREND:**\n${moodTrend.join('\n')}\n\nAnalyze their mood pattern. Acknowledge any improvements, address concerning dips, and provide personalized encouragement based on their emotional journey. If you see positive trends, celebrate them! If you notice struggles, offer specific support and remind them that ups and downs are normal parts of growth.`
+      : '';
+
+    // Enhanced system prompt with mood context
+    const systemPrompt = `You are Pursivo, a compassionate and motivating AI coach specialized in helping people build better habits and overcome challenges like quitting smoking, exercising regularly, or improving their daily routines.${userContext?.name ? ` You're speaking with ${userContext.name}.` : ''}
+
+Your responses should be:
+- Empathetic and understanding of their emotional journey
+- Practical and actionable with specific strategies
+- Encouraging but realistic about the ups and downs of growth
+- Personalized based on their mood trends and situation
+- Brief but meaningful (2-4 sentences)
+- Focused on progress over perfection
+
+${userContext?.streak ? `Current streak: ${userContext.streak} days` : ''}
+${userContext?.goals ? `Current goals: ${Array.isArray(userContext.goals) ? userContext.goals.join(', ') : userContext.goals}` : ''}
+${userContext?.challenges ? `Main challenges: ${Array.isArray(userContext.challenges) ? userContext.challenges.join(', ') : userContext.challenges}` : ''}${moodTrendContext}
+
+When users share struggles, provide specific strategies. When they share wins, celebrate with them. Always connect your response to their recent mood patterns when relevant.`;
 
     if (!openAIApiKey) {
+      console.error('OpenAI API key not configured');
       throw new Error('OpenAI API key not configured');
     }
+
+    console.log('Processing AI chat request for user:', user.id);
+    console.log('Mood trend context:', moodTrendContext ? 'Available' : 'Not available');
 
     // Build messages array with chat history
     const messages = [
       {
         role: 'system',
-        content: `You are a compassionate and motivating AI coach specialized in helping people build better habits and overcome challenges like quitting smoking, exercising regularly, or improving their daily routines. 
-
-Your responses should be:
-- Empathetic and understanding
-- Practical and actionable
-- Encouraging but realistic
-- Personalized based on their situation
-- Brief but meaningful (2-4 sentences)
-
-When users share struggles, provide specific strategies. When they share wins, celebrate with them. Always focus on progress over perfection.`
+        content: systemPrompt
       },
       // Add recent chat history (last 10 messages)
       ...chatHistory.slice(-10).map((msg: any) => ({
