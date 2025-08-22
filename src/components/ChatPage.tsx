@@ -152,15 +152,10 @@ export const ChatPage = () => {
         .eq('streak_type', 'daily_checkin')
         .single();
 
-      // Call enhanced ai-chat function with mood trend data and timestamps
+      // Call enhanced ai-chat function with fresh context
       const { data, error } = await supabase.functions.invoke('ai-chat', {
         body: { 
           message: content.trim(),
-          chatHistory: messages.map(msg => ({
-            content: msg.content,
-            sender: msg.sender,
-            timestamp: msg.timestamp
-          })),
           userContext: {
             name: profileData?.name || 'there',
             goals: userData?.goals,

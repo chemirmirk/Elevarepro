@@ -16,7 +16,21 @@ serve(async (req) => {
   }
 
   try {
-    const { message, chatHistory, userContext } = await req.json();
+    console.log('AI chat function invoked');
+    
+    if (!openAIApiKey) {
+      console.error('OpenAI API key not configured');
+      throw new Error('OpenAI API key not configured');
+    }
+
+    const { message, userContext } = await req.json();
+    
+    if (!message) {
+      throw new Error('Message is required');
+    }
+
+    console.log('Processing message:', message);
+    console.log('User context:', userContext);
     
     // Initialize Supabase client
     const supabase = createClient(
@@ -34,7 +48,25 @@ serve(async (req) => {
     // Get current user
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError || !user) {
+      console.error('User authentication error:', userError);
       throw new Error('User not authenticated');
+    }
+
+    console.log('Authenticated user:', user.id);
+
+    // Get or create today's thread
+    const today = new Date().toISOString().split('T')[0];
+    
+    let threadId = null;
+    const { data: existingThread, error: threadError } = await supabase
+      .from('conversation_threads')
+      .select('thread_id')
+      .eq('user_id', user.id)
+      .eq('date', today)
+      .single();
+
+    if (threadError && threadError.code !== 'PGRST116') {
+      console.error('Error fetching thread:', threadError);
     }
 
     // Fetch 7-day mood trend data
@@ -51,6 +83,14 @@ serve(async (req) => {
     if (moodError) {
       console.error('Error fetching mood data:', moodError);
     }
+
+    // Get today's check-in for specific context
+    const { data: todayCheckIn } = await supabase
+      .from('check_ins')
+      .select('mood, goals_achieved, challenges')
+      .eq('user_id', user.id)
+      .eq('date', today)
+      .single();
 
     // Create 7-day mood trend with day names and emojis
     const moodEmojis = [
@@ -79,88 +119,182 @@ serve(async (req) => {
       }
     }
 
-    const moodTrendContext = moodTrend.length > 0 
-      ? `\n\n**USER'S 7-DAY MOOD TREND:**\n${moodTrend.join('\n')}\n\nAnalyze their mood pattern. Acknowledge any improvements, address concerning dips, and provide personalized encouragement based on their emotional journey. If you see positive trends, celebrate them! If you notice struggles, offer specific support and remind them that ups and downs are normal parts of growth.`
-      : '';
+    const isNewDay = !existingThread;
+    console.log('Is new day conversation:', isNewDay);
 
-    // Check if this is a new day conversation
-    const today = new Date().toISOString().split('T')[0];
-    const todayMessages = chatHistory.filter((msg: any) => {
-      const msgDate = new Date(msg.timestamp || Date.now()).toISOString().split('T')[0];
-      return msgDate === today;
-    });
+    // Build fresh context for each message
+    const contextParts = [];
+    contextParts.push(`Name: ${userContext?.name || 'User'}`);
+    contextParts.push(`Current streak: ${userContext?.streak || 0} days`);
     
-    const isNewDay = todayMessages.length === 0;
-    console.log('Is new day conversation:', isNewDay, 'Today messages count:', todayMessages.length);
-
-    // Enhanced system prompt with mood context and day-based logic
-    let systemPrompt = `You are Pursivo, a compassionate and motivating AI coach specialized in helping people build better habits and overcome challenges like quitting smoking, exercising regularly, or improving their daily routines.${userContext?.name ? ` You're speaking with ${userContext.name}.` : ''}
-
-Your responses should be:
-- Empathetic and understanding of their emotional journey
-- Practical and actionable with specific strategies
-- Encouraging but realistic about the ups and downs of growth
-- Personalized based on their mood trends and situation
-- Brief but meaningful (2-4 sentences)
-- Focused on progress over perfection
-
-${userContext?.streak ? `Current streak: ${userContext.streak} days` : ''}
-${userContext?.goals ? `Current goals: ${Array.isArray(userContext.goals) ? userContext.goals.join(', ') : userContext.goals}` : ''}
-${userContext?.challenges ? `Main challenges: ${Array.isArray(userContext.challenges) ? userContext.challenges.join(', ') : userContext.challenges}` : ''}${moodTrendContext}
-
-${isNewDay ? 'IMPORTANT: This is the start of a new day conversation. Begin your response with a warm greeting like "Good morning!" or "Hey, good morning!" and acknowledge the new day before addressing their message. Keep it natural and friendly.' : 'Continue the ongoing conversation from today, maintaining context from your previous interactions.'}
-
-When users share struggles, provide specific strategies. When they share wins, celebrate with them. Always connect your response to their recent mood patterns when relevant.`;
-
-    if (!openAIApiKey) {
-      console.error('OpenAI API key not configured');
-      throw new Error('OpenAI API key not configured');
+    if (userContext?.goals) {
+      contextParts.push(`Goals: ${Array.isArray(userContext.goals) ? userContext.goals.join(', ') : userContext.goals}`);
+    }
+    
+    if (userContext?.challenges) {
+      contextParts.push(`Challenges: ${Array.isArray(userContext.challenges) ? userContext.challenges.join(', ') : userContext.challenges}`);
     }
 
-    console.log('Processing AI chat request for user:', user.id);
-    console.log('Mood trend context:', moodTrendContext ? 'Available' : 'Not available');
-
-    // Build messages array with day-filtered chat history for context
-    const contextMessages = isNewDay ? [] : todayMessages.slice(-8); // Use only today's messages for context
+    contextParts.push(`7-Day Mood Trend: ${moodTrend.join(' | ')}`);
     
-    const messages = [
-      {
-        role: 'system',
-        content: systemPrompt
-      },
-      // Add today's chat history for context (maintaining conversation flow)
-      ...contextMessages.map((msg: any) => ({
-        role: msg.sender === 'user' ? 'user' : 'assistant',
-        content: msg.content
-      })),
-      {
-        role: 'user',
-        content: message
+    if (todayCheckIn) {
+      const todayMoodEmoji = moodEmojis.find(m => m.value === todayCheckIn.mood);
+      contextParts.push(`Today's Check-in: Mood ${todayMoodEmoji?.emoji} (${todayMoodEmoji?.label})`);
+      if (todayCheckIn.goals_achieved) contextParts.push(`Goals achieved: ${todayCheckIn.goals_achieved}`);
+      if (todayCheckIn.challenges) contextParts.push(`Today's challenges: ${todayCheckIn.challenges}`);
+    }
+
+    const freshContext = contextParts.join(' | ');
+
+    // Enhanced system prompt with non-repetitive instructions
+    const systemPrompt = `You are Pursivo, a compassionate AI coach specializing in personal growth and habit formation. You help people build better habits and overcome challenges.
+
+FRESH CONTEXT: ${freshContext}
+
+CRITICAL INSTRUCTIONS FOR NON-REPETITIVE RESPONSES:
+- NEVER reuse the same opening phrases or identical advice within 48 hours
+- ALWAYS reference at least one concrete detail from today's check-in or mood trend  
+- Vary your response style: sometimes motivational, sometimes practical, sometimes celebratory
+- If this is a new day (${isNewDay}), start with a warm, unique greeting
+- Keep responses conversational and personalized (2-4 sentences max)
+- Focus on their specific situation and recent patterns
+
+${isNewDay ? 'NEW DAY: Start with a fresh, warm greeting and acknowledge the new day naturally.' : 'CONTINUING CONVERSATION: Build on previous context while staying fresh and engaging.'}
+
+Your personality: Warm, encouraging, realistic about ups and downs, celebrates small wins, provides actionable advice tailored to their specific goals and challenges.`;
+
+    // If new day, create thread via OpenAI, otherwise use existing
+    if (isNewDay && !threadId) {
+      console.log('Creating new thread for new day');
+      const threadResponse = await fetch('https://api.openai.com/v1/threads', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${openAIApiKey}`,
+          'Content-Type': 'application/json',
+          'OpenAI-Beta': 'assistants=v2'
+        },
+        body: JSON.stringify({})
+      });
+
+      if (!threadResponse.ok) {
+        console.error('Failed to create thread, using direct chat');
+        threadId = null;
+      } else {
+        const threadData = await threadResponse.json();
+        threadId = threadData.id;
+        
+        // Save thread to database
+        await supabase
+          .from('conversation_threads')
+          .insert({
+            user_id: user.id,
+            thread_id: threadId,
+            date: today
+          });
       }
-    ];
-
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: messages,
-        max_tokens: 200,
-        temperature: 0.7,
-      }),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.text();
-      console.error('OpenAI API error:', errorData);
-      throw new Error(`OpenAI API error: ${response.status}`);
+    } else if (existingThread) {
+      threadId = existingThread.thread_id;
+      console.log('Using existing thread:', threadId);
     }
 
-    const data = await response.json();
-    const aiResponse = data.choices[0].message.content;
+    let aiResponse;
+
+    if (threadId) {
+      // Use thread-based conversation
+      console.log('Using thread-based conversation');
+      
+      // Add message to thread
+      await fetch(`https://api.openai.com/v1/threads/${threadId}/messages`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${openAIApiKey}`,
+          'Content-Type': 'application/json',
+          'OpenAI-Beta': 'assistants=v2'
+        },
+        body: JSON.stringify({
+          role: 'user',
+          content: `${systemPrompt}\n\nUser message: ${message}`
+        })
+      });
+
+      // Create run
+      const runResponse = await fetch(`https://api.openai.com/v1/threads/${threadId}/runs`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${openAIApiKey}`,
+          'Content-Type': 'application/json',
+          'OpenAI-Beta': 'assistants=v2'
+        },
+        body: JSON.stringify({
+          model: 'gpt-5-2025-08-07',
+          max_completion_tokens: 200,
+          temperature: 0.7,
+          frequency_penalty: 0.6,
+          presence_penalty: 0.3
+        })
+      });
+
+      const runData = await runResponse.json();
+      let runStatus = runData.status;
+      
+      // Poll for completion
+      while (runStatus === 'in_progress' || runStatus === 'queued') {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        const statusResponse = await fetch(`https://api.openai.com/v1/threads/${threadId}/runs/${runData.id}`, {
+          headers: {
+            'Authorization': `Bearer ${openAIApiKey}`,
+            'OpenAI-Beta': 'assistants=v2'
+          }
+        });
+        const statusData = await statusResponse.json();
+        runStatus = statusData.status;
+      }
+
+      // Get messages
+      const messagesResponse = await fetch(`https://api.openai.com/v1/threads/${threadId}/messages`, {
+        headers: {
+          'Authorization': `Bearer ${openAIApiKey}`,
+          'OpenAI-Beta': 'assistants=v2'
+        }
+      });
+      
+      const messagesData = await messagesResponse.json();
+      aiResponse = messagesData.data[0]?.content[0]?.text?.value || 'I apologize, I encountered an issue generating a response.';
+      
+    } else {
+      // Fallback to direct chat completion
+      console.log('Using fallback chat completion');
+      
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${openAIApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'gpt-5-2025-08-07',
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: message }
+          ],
+          max_completion_tokens: 200,
+          temperature: 0.7,
+          frequency_penalty: 0.6,
+          presence_penalty: 0.3
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.text();
+        console.error('OpenAI API error:', errorData);
+        throw new Error(`OpenAI API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      aiResponse = data.choices[0].message.content;
+    }
+
+    console.log('Generated AI response:', aiResponse);
 
     // Determine message type based on content
     let messageType = 'motivation';
@@ -178,6 +312,7 @@ When users share struggles, provide specific strategies. When they share wins, c
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
+    
   } catch (error) {
     console.error('Error in ai-chat function:', error);
     return new Response(JSON.stringify({ 
