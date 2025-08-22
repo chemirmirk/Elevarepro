@@ -83,8 +83,18 @@ serve(async (req) => {
       ? `\n\n**USER'S 7-DAY MOOD TREND:**\n${moodTrend.join('\n')}\n\nAnalyze their mood pattern. Acknowledge any improvements, address concerning dips, and provide personalized encouragement based on their emotional journey. If you see positive trends, celebrate them! If you notice struggles, offer specific support and remind them that ups and downs are normal parts of growth.`
       : '';
 
-    // Enhanced system prompt with mood context
-    const systemPrompt = `You are Pursivo, a compassionate and motivating AI coach specialized in helping people build better habits and overcome challenges like quitting smoking, exercising regularly, or improving their daily routines.${userContext?.name ? ` You're speaking with ${userContext.name}.` : ''}
+    // Check if this is a new day conversation
+    const today = new Date().toISOString().split('T')[0];
+    const todayMessages = chatHistory.filter((msg: any) => {
+      const msgDate = new Date(msg.timestamp || Date.now()).toISOString().split('T')[0];
+      return msgDate === today;
+    });
+    
+    const isNewDay = todayMessages.length === 0;
+    console.log('Is new day conversation:', isNewDay, 'Today messages count:', todayMessages.length);
+
+    // Enhanced system prompt with mood context and day-based logic
+    let systemPrompt = `You are Pursivo, a compassionate and motivating AI coach specialized in helping people build better habits and overcome challenges like quitting smoking, exercising regularly, or improving their daily routines.${userContext?.name ? ` You're speaking with ${userContext.name}.` : ''}
 
 Your responses should be:
 - Empathetic and understanding of their emotional journey
@@ -98,6 +108,8 @@ ${userContext?.streak ? `Current streak: ${userContext.streak} days` : ''}
 ${userContext?.goals ? `Current goals: ${Array.isArray(userContext.goals) ? userContext.goals.join(', ') : userContext.goals}` : ''}
 ${userContext?.challenges ? `Main challenges: ${Array.isArray(userContext.challenges) ? userContext.challenges.join(', ') : userContext.challenges}` : ''}${moodTrendContext}
 
+${isNewDay ? 'IMPORTANT: This is the start of a new day conversation. Begin your response with a warm greeting like "Good morning!" or "Hey, good morning!" and acknowledge the new day before addressing their message. Keep it natural and friendly.' : 'Continue the ongoing conversation from today, maintaining context from your previous interactions.'}
+
 When users share struggles, provide specific strategies. When they share wins, celebrate with them. Always connect your response to their recent mood patterns when relevant.`;
 
     if (!openAIApiKey) {
@@ -108,14 +120,16 @@ When users share struggles, provide specific strategies. When they share wins, c
     console.log('Processing AI chat request for user:', user.id);
     console.log('Mood trend context:', moodTrendContext ? 'Available' : 'Not available');
 
-    // Build messages array with chat history
+    // Build messages array with day-filtered chat history for context
+    const contextMessages = isNewDay ? [] : todayMessages.slice(-8); // Use only today's messages for context
+    
     const messages = [
       {
         role: 'system',
         content: systemPrompt
       },
-      // Add recent chat history (last 10 messages)
-      ...chatHistory.slice(-10).map((msg: any) => ({
+      // Add today's chat history for context (maintaining conversation flow)
+      ...contextMessages.map((msg: any) => ({
         role: msg.sender === 'user' ? 'user' : 'assistant',
         content: msg.content
       })),
