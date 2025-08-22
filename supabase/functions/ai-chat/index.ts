@@ -33,27 +33,29 @@ serve(async (req) => {
     console.log('Processing message:', message);
     console.log('User context:', userContext);
     
-    // Initialize Supabase client with anon key for client operations
+    // Extract and validate JWT token
     const authHeader = req.headers.get('authorization');
     console.log('Auth header present:', !!authHeader);
     
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      console.error('Missing or invalid authorization header');
+      throw new Error('Missing authorization header');
+    }
+    
+    const token = authHeader.replace('Bearer ', '');
+    console.log('JWT token extracted');
+    
+    // Initialize Supabase client with service role for backend operations
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      {
-        global: {
-          headers: {
-            authorization: authHeader ?? '',
-          },
-        },
-      }
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Get current user - let Supabase handle JWT validation automatically
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    // Verify JWT token and get user
+    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
     if (userError || !user) {
       console.error('User authentication error:', userError);
-      throw new Error('User not authenticated');
+      throw new Error('Invalid or expired token');
     }
 
     console.log('Authenticated user:', user.id);

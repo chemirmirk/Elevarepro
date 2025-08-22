@@ -162,6 +162,9 @@ export const ChatPage = () => {
             streak: streakData?.current_count || 0,
             challenges: userData?.challenges
           }
+        },
+        headers: {
+          Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
         }
       });
 
@@ -184,6 +187,17 @@ export const ChatPage = () => {
       console.error('Error getting AI response:', error);
       setIsTyping(false);
       
+      // Improved error handling
+      let errorMessage = "AI service temporarily unavailable";
+      if (error && typeof error === 'object' && 'message' in error) {
+        const err = error as any;
+        if (err.message?.includes('Invalid or expired token')) {
+          errorMessage = "Session expired. Please refresh the page.";
+        } else if (err.message?.includes('Missing authorization')) {
+          errorMessage = "Authentication error. Please try logging in again.";
+        }
+      }
+      
       // Fallback to local response
       const fallbackResponse = generateAIResponse(content);
       const aiMessage: ChatMessage = {
@@ -197,7 +211,7 @@ export const ChatPage = () => {
       setMessages(prev => [...prev, aiMessage]);
       await saveMessage(aiMessage);
       
-      toast.error("AI service temporarily unavailable");
+      toast.error(errorMessage);
     }
   };
 
