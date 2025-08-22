@@ -21,13 +21,27 @@ serve(async (req) => {
     
     if (!openAIApiKey) {
       console.error('OpenAI API key not configured');
-      throw new Error('OpenAI API key not configured');
+      return new Response(JSON.stringify({ 
+        error: 'OpenAI API key not configured',
+        response: 'I apologize, but the AI service is not properly configured. Please try again later.',
+        type: 'motivation'
+      }), {
+        status: 200, // Return 200 to prevent client errors
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     const { message, userContext } = await req.json();
     
     if (!message) {
-      throw new Error('Message is required');
+      return new Response(JSON.stringify({ 
+        error: 'Message is required',
+        response: 'I didn\'t receive your message. Could you please try sending it again?',
+        type: 'motivation'
+      }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     console.log('Processing message:', message);
@@ -39,7 +53,14 @@ serve(async (req) => {
     
     if (!authHeader) {
       console.error('Missing authorization header');
-      throw new Error('Missing authorization header');
+      return new Response(JSON.stringify({ 
+        error: 'Missing authorization header',
+        response: 'I\'m having trouble authenticating your request. Please try refreshing the page and signing in again.',
+        type: 'motivation'
+      }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
     
     // Initialize Supabase client with anon key and pass auth header
@@ -59,7 +80,14 @@ serve(async (req) => {
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError || !user) {
       console.error('User authentication error:', userError);
-      throw new Error('Invalid or expired token');
+      return new Response(JSON.stringify({ 
+        error: 'Invalid or expired token',
+        response: 'Your session has expired. Please refresh the page and sign in again to continue our conversation.',
+        type: 'motivation'
+      }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     console.log('Authenticated user:', user.id);
@@ -325,11 +353,23 @@ Your personality: Warm, encouraging, realistic about ups and downs, celebrates s
     
   } catch (error) {
     console.error('Error in ai-chat function:', error);
+    
+    // Return graceful error response instead of 500
+    let fallbackResponse = 'I apologize, but I\'m having trouble processing your request right now. Please try again in a moment.';
+    let messageType = 'motivation';
+    
+    // Provide specific fallback based on error type
+    if (error.message?.includes('OpenAI')) {
+      fallbackResponse = 'I\'m having trouble connecting to my AI service right now. But I\'m still here to support you! Remember, every small step counts toward your goals.';
+    } else if (error.message?.includes('auth')) {
+      fallbackResponse = 'I\'m having authentication issues. Please try refreshing the page. In the meantime, remember that consistency is key to building lasting habits!';
+    }
+    
     return new Response(JSON.stringify({ 
-      error: 'Failed to generate AI response',
-      details: error.message 
+      response: fallbackResponse,
+      type: messageType
     }), {
-      status: 500,
+      status: 200, // Return 200 with fallback response
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
