@@ -1,3 +1,4 @@
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.53.0';
@@ -32,13 +33,13 @@ serve(async (req) => {
     console.log('Processing message:', message);
     console.log('User context:', userContext);
     
-    // Initialize Supabase client with proper auth handling
+    // Initialize Supabase client with anon key for client operations
     const authHeader = req.headers.get('authorization');
     console.log('Auth header present:', !!authHeader);
     
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
       {
         global: {
           headers: {
@@ -48,29 +49,14 @@ serve(async (req) => {
       }
     );
 
-    // Get current user from the JWT token
-    let user = null;
-    if (authHeader) {
-      try {
-        const { data: { user: authUser }, error: userError } = await supabase.auth.getUser(
-          authHeader.replace('Bearer ', '')
-        );
-        if (userError) {
-          console.error('User authentication error:', userError);
-          throw new Error('User not authenticated');
-        }
-        user = authUser;
-        console.log('Authenticated user:', user?.id);
-      } catch (error) {
-        console.error('Error getting user:', error);
-        throw new Error('User not authenticated');
-      }
-    }
-
-    if (!user) {
-      console.error('No user found');
+    // Get current user - the client will handle JWT validation
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) {
+      console.error('User authentication error:', userError);
       throw new Error('User not authenticated');
     }
+
+    console.log('Authenticated user:', user.id);
 
     // Get or create today's thread
     const today = new Date().toISOString().split('T')[0];
