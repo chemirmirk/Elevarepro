@@ -162,46 +162,72 @@ serve(async (req) => {
     const isNewDay = !existingThread;
     console.log('Is new day conversation:', isNewDay);
 
-    // Build fresh context for each message
+    // Build user context in readable format
     const contextParts = [];
-    contextParts.push(`Name: ${userContext?.name || 'User'}`);
+    
+    // Basic info
+    contextParts.push(`User: ${userContext?.name || 'User'}`);
     contextParts.push(`Current streak: ${userContext?.streak || 0} days`);
     
+    // Format goals naturally
     if (userContext?.goals) {
-      contextParts.push(`Goals: ${Array.isArray(userContext.goals) ? userContext.goals.join(', ') : userContext.goals}`);
+      let goalsText = '';
+      if (typeof userContext.goals === 'object' && !Array.isArray(userContext.goals)) {
+        const goalsList = [];
+        Object.entries(userContext.goals).forEach(([key, value]) => {
+          if (typeof value === 'object') {
+            if (key === 'gym' && value.frequency) {
+              goalsList.push(`go to gym ${value.frequency} times per week`);
+            } else if (key === 'smoking' && value.currentAmount && value.targetAmount) {
+              goalsList.push(`reduce smoking from ${value.currentAmount} to ${value.targetAmount} cigarettes per day`);
+            }
+          }
+        });
+        goalsText = goalsList.join(', ');
+      } else if (Array.isArray(userContext.goals)) {
+        goalsText = userContext.goals.join(', ');
+      } else {
+        goalsText = String(userContext.goals);
+      }
+      if (goalsText) contextParts.push(`Goals: ${goalsText}`);
     }
     
-    if (userContext?.challenges) {
-      contextParts.push(`Challenges: ${Array.isArray(userContext.challenges) ? userContext.challenges.join(', ') : userContext.challenges}`);
+    // Format challenges
+    if (userContext?.challenges && userContext.challenges.length > 0) {
+      contextParts.push(`Current challenges: ${userContext.challenges.join(', ')}`);
     }
 
-    contextParts.push(`7-Day Mood Trend: ${moodTrend.join(' | ')}`);
+    // Add mood trend
+    contextParts.push(`7-day mood trend: ${moodTrend.join(', ')}`);
     
+    // Add today's check-in if available
     if (todayCheckIn) {
       const todayMoodEmoji = moodEmojis.find(m => m.value === todayCheckIn.mood);
-      contextParts.push(`Today's Check-in: Mood ${todayMoodEmoji?.emoji} (${todayMoodEmoji?.label})`);
-      if (todayCheckIn.goals_achieved) contextParts.push(`Goals achieved: ${todayCheckIn.goals_achieved}`);
+      contextParts.push(`Today's mood: ${todayMoodEmoji?.emoji} ${todayMoodEmoji?.label}`);
+      if (todayCheckIn.goals_achieved) contextParts.push(`Goals achieved today: ${todayCheckIn.goals_achieved}`);
       if (todayCheckIn.challenges) contextParts.push(`Today's challenges: ${todayCheckIn.challenges}`);
     }
 
-    const freshContext = contextParts.join(' | ');
+    const userContextText = contextParts.join('\n');
 
-    // Enhanced system prompt with non-repetitive instructions
-    const systemPrompt = `You are Pursivo, a compassionate AI coach specializing in personal growth and habit formation. You help people build better habits and overcome challenges.
+    // Clean system prompt - separate from user context
+    const systemPrompt = `You are Pursivo, a compassionate AI personal growth coach. You help people build better habits and overcome challenges.
 
-FRESH CONTEXT: ${freshContext}
-
-CRITICAL INSTRUCTIONS FOR NON-REPETITIVE RESPONSES:
-- NEVER reuse the same opening phrases or identical advice within 48 hours
-- ALWAYS reference at least one concrete detail from today's check-in or mood trend  
-- Vary your response style: sometimes motivational, sometimes practical, sometimes celebratory
-- If this is a new day (${isNewDay}), start with a warm, unique greeting
+PERSONALITY:
+- Warm, encouraging, and realistic about ups and downs
+- Celebrate small wins and provide actionable advice
 - Keep responses conversational and personalized (2-4 sentences max)
-- Focus on their specific situation and recent patterns
+- Reference specific details from their situation when relevant
 
-${isNewDay ? 'NEW DAY: Start with a fresh, warm greeting and acknowledge the new day naturally.' : 'CONTINUING CONVERSATION: Build on previous context while staying fresh and engaging.'}
+RESPONSE GUIDELINES:
+- If asked "What is your name?" or similar, simply respond: "My name is Pursivo" with a friendly addition if appropriate
+- ${isNewDay ? 'This is a new day - start with a warm, unique greeting' : 'Continue the conversation naturally, building on previous context'}
+- Always reference concrete details from their mood trend, goals, or check-ins when relevant
+- Vary your response style: motivational, practical, or celebratory as appropriate
+- Never repeat identical phrases or advice from recent conversations
 
-Your personality: Warm, encouraging, realistic about ups and downs, celebrates small wins, provides actionable advice tailored to their specific goals and challenges.`;
+CURRENT USER CONTEXT:
+${userContextText}`;
 
     // If new day, create thread via OpenAI, otherwise use existing
     if (isNewDay && !threadId) {
@@ -253,7 +279,7 @@ Your personality: Warm, encouraging, realistic about ups and downs, celebrates s
         },
         body: JSON.stringify({
           role: 'user',
-          content: `${systemPrompt}\n\nUser message: ${message}`
+          content: message
         })
       });
 
@@ -268,9 +294,9 @@ Your personality: Warm, encouraging, realistic about ups and downs, celebrates s
         body: JSON.stringify({
           model: 'gpt-5-2025-08-07',
           max_completion_tokens: 200,
-          temperature: 0.7,
           frequency_penalty: 0.6,
-          presence_penalty: 0.3
+          presence_penalty: 0.3,
+          instructions: systemPrompt
         })
       });
 
@@ -318,7 +344,6 @@ Your personality: Warm, encouraging, realistic about ups and downs, celebrates s
             { role: 'user', content: message }
           ],
           max_completion_tokens: 200,
-          temperature: 0.7,
           frequency_penalty: 0.6,
           presence_penalty: 0.3
         }),
