@@ -152,6 +152,12 @@ export const ChatPage = () => {
         .eq('streak_type', 'daily_checkin')
         .single();
 
+      // Get current session token for authentication
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        throw new Error('No valid session found');
+      }
+
       // Call enhanced ai-chat function with fresh context
       const { data, error } = await supabase.functions.invoke('ai-chat', {
         body: { 
@@ -164,7 +170,7 @@ export const ChatPage = () => {
           }
         },
         headers: {
-          Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
+          Authorization: `Bearer ${session.access_token}`
         }
       });
 
@@ -187,29 +193,38 @@ export const ChatPage = () => {
       console.error('Error getting AI response:', error);
       setIsTyping(false);
       
-      // Improved error handling
+      // Improved error handling with specific messages
       let errorMessage = "AI service temporarily unavailable";
-      if (error && typeof error === 'object' && 'message' in error) {
+      let shouldShowFallback = true;
+      
+      if (error && typeof error === 'object') {
         const err = error as any;
-        if (err.message?.includes('Invalid or expired token')) {
-          errorMessage = "Session expired. Please refresh the page.";
+        if (err.message?.includes('No valid session found')) {
+          errorMessage = "Session expired. Please refresh the page and sign in again.";
+          shouldShowFallback = false;
+        } else if (err.message?.includes('Invalid or expired token')) {
+          errorMessage = "Authentication error. Please refresh and try again.";
+          shouldShowFallback = false;
         } else if (err.message?.includes('Missing authorization')) {
-          errorMessage = "Authentication error. Please try logging in again.";
+          errorMessage = "Authentication required. Please sign in again.";
+          shouldShowFallback = false;
         }
       }
       
-      // Fallback to local response
-      const fallbackResponse = generateAIResponse(content);
-      const aiMessage: ChatMessage = {
-        id: (Date.now() + 1).toString(),
-        content: fallbackResponse.content,
-        sender: 'ai',
-        timestamp: new Date(),
-        type: fallbackResponse.type
-      };
-      
-      setMessages(prev => [...prev, aiMessage]);
-      await saveMessage(aiMessage);
+      // Only show fallback for service errors, not auth errors
+      if (shouldShowFallback) {
+        const fallbackResponse = generateAIResponse(content);
+        const aiMessage: ChatMessage = {
+          id: (Date.now() + 1).toString(),
+          content: fallbackResponse.content,
+          sender: 'ai',
+          timestamp: new Date(),
+          type: fallbackResponse.type
+        };
+        
+        setMessages(prev => [...prev, aiMessage]);
+        await saveMessage(aiMessage);
+      }
       
       toast.error(errorMessage);
     }

@@ -142,9 +142,9 @@ export default function Auth() {
         <div className="text-center mb-8">
           <div className="flex items-center justify-center mb-4">
             <Heart className="h-8 w-8 text-primary mr-2" />
-            <h1 className="text-2xl font-bold text-foreground">HabitFlow</h1>
+            <h1 className="text-2xl font-bold text-foreground">Pursivo</h1>
           </div>
-          <p className="text-muted-foreground">Track your habits, achieve your goals</p>
+          <p className="text-muted-foreground">Your personal AI coach for habit formation</p>
         </div>
 
         <Card className="shadow-lg">
