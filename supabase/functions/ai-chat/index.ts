@@ -63,21 +63,23 @@ serve(async (req) => {
       });
     }
     
-    // Initialize Supabase client with anon key and pass auth header
+    // Initialize Supabase client with service role key for admin operations
     const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      'https://kftwjrlcanttwnsdmgqv.supabase.co',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
       {
-        global: {
-          headers: {
-            authorization: authHeader,
-          },
-        },
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false
+        }
       }
     );
 
-    // Verify JWT token and get user using anon key client
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    // Extract JWT token from authorization header
+    const token = authHeader.replace('Bearer ', '');
+    
+    // Verify JWT token and get user
+    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
     if (userError || !user) {
       console.error('User authentication error:', userError);
       return new Response(JSON.stringify({ 
