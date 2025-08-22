@@ -49,8 +49,13 @@ serve(async (req) => {
       }
     );
 
-    // Get current user - the client will handle JWT validation
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    // Extract JWT token and get current user
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      throw new Error('Missing or invalid authorization header');
+    }
+    
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
     if (userError || !user) {
       console.error('User authentication error:', userError);
       throw new Error('User not authenticated');
