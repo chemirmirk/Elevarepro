@@ -32,27 +32,45 @@ serve(async (req) => {
     console.log('Processing message:', message);
     console.log('User context:', userContext);
     
-    // Initialize Supabase client
+    // Initialize Supabase client with proper auth handling
+    const authHeader = req.headers.get('authorization');
+    console.log('Auth header present:', !!authHeader);
+    
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
       {
         global: {
           headers: {
-            authorization: req.headers.get('authorization') ?? '',
+            authorization: authHeader ?? '',
           },
         },
       }
     );
 
-    // Get current user
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    if (userError || !user) {
-      console.error('User authentication error:', userError);
-      throw new Error('User not authenticated');
+    // Get current user from the JWT token
+    let user = null;
+    if (authHeader) {
+      try {
+        const { data: { user: authUser }, error: userError } = await supabase.auth.getUser(
+          authHeader.replace('Bearer ', '')
+        );
+        if (userError) {
+          console.error('User authentication error:', userError);
+          throw new Error('User not authenticated');
+        }
+        user = authUser;
+        console.log('Authenticated user:', user?.id);
+      } catch (error) {
+        console.error('Error getting user:', error);
+        throw new Error('User not authenticated');
+      }
     }
 
-    console.log('Authenticated user:', user.id);
+    if (!user) {
+      console.error('No user found');
+      throw new Error('User not authenticated');
+    }
 
     // Get or create today's thread
     const today = new Date().toISOString().split('T')[0];
