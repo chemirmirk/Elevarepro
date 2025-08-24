@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, Heart } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { LogoProcessor } from '@/components/LogoProcessor';
 
 export default function Auth() {
   const [isLoading, setIsLoading] = useState(false);
@@ -137,7 +138,9 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-secondary/5 p-4">
+    <>
+      <LogoProcessor />
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-secondary/5 p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <div className="flex items-center justify-center mb-4">
@@ -307,6 +310,7 @@ export default function Auth() {
           By continuing, you agree to our terms of service and privacy policy.
         </p>
       </div>
-    </div>
+      </div>
+    </>
   );
 }
