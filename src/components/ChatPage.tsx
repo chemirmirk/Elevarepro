@@ -19,7 +19,7 @@ interface ChatMessage {
 const mockMessages: ChatMessage[] = [
   {
     id: '1',
-    content: "Hello! I'm Pursivo, your personal AI coach and companion on this transformative journey. 🚀\n\nThe name 'Pursivo' represents the relentless pursuit of growth, discipline, and personal progress. Just like you, I believe in the power of consistent action and the courage to pursue your highest potential.\n\nI'm here to support you every step of the way—whether you need motivation, guidance through challenges, or someone to celebrate your victories with. Together, we'll build the habits that will shape your best self.\n\nHow are you feeling about your journey today?",
+    content: "Hello! I'm Pursivo, your personal AI coach and companion on this transformative journey with Elevare. 🚀\n\nThe name 'Pursivo' represents the relentless pursuit of growth, discipline, and personal progress. Just like you, I believe in the power of consistent action and the courage to pursue your highest potential.\n\nI'm here to support you every step of the way—whether you need motivation, guidance through challenges, or someone to celebrate your victories with. Together, we'll build the habits that will elevate your life.\n\nHow are you feeling about your journey today?",
     sender: 'ai',
     timestamp: new Date(),
     type: 'motivation'
@@ -286,7 +286,7 @@ export const ChatPage = () => {
       {/* Header */}
       <div className="p-4 border-b bg-card">
         <div className="text-center">
-          <h1 className="text-xl font-bold mb-1">Pursivo AI Coach</h1>
+          <h1 className="text-xl font-bold mb-1">Elevare AI Coach</h1>
           <div className="flex items-center justify-center gap-2">
             <div className="w-2 h-2 bg-success rounded-full animate-pulse"></div>
             <p className="text-sm text-muted-foreground">Online • Always here for your growth</p>
@@ -399,7 +399,7 @@ export const ChatPage = () => {
           </Button>
         </div>
         <p className="text-xs text-muted-foreground mt-2">
-          Share your thoughts, ask for advice, or get motivation support from Pursivo
+          Share your thoughts, ask for advice, or get motivation support from your Elevare AI coach
         </p>
       </div>
     </div>

@@ -429,7 +429,7 @@ Please analyze my recent mood trend and provide personalized feedback based on m
           });
 
         // Show toast notification about Pursivo's response
-        toast.success("Pursivo has acknowledged your check-in! Visit the Chat tab to see your personalized feedback.");
+        toast.success("Your Elevare AI coach has acknowledged your check-in! Visit the Chat tab to see your personalized feedback.");
       }
     } catch (error) {
       console.error('Error sending mood acknowledgment:', error);
