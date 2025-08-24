@@ -2,7 +2,7 @@ import { CapacitorConfig } from '@capacitor/core';
 
 const config: CapacitorConfig = {
   appId: 'app.lovable.53bec2cd62bf4f0892d45b257ac3c4c1',
-  appName: 'DisciplineBoost',
+  appName: 'Elevare',
   webDir: 'dist',
   bundledWebRuntime: false,
   server: {

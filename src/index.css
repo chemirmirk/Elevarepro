@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* DisciplineBoost Design System - Refreshing wellness app with motivational colors
+/* Elevare Design System - Refreshing wellness app with motivational colors
 All colors MUST be HSL format.
 */
 
@@ -152,7 +152,7 @@ All colors MUST be HSL format.
   }
 }
 
-/* Custom animations for DisciplineBoost */
+/* Custom animations for Elevare */
 @layer utilities {
   .animate-bounce-gentle {
     animation: bounce-gentle 2s infinite;

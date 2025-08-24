@@ -148,7 +148,7 @@ export const OnboardingFlow = ({ onComplete }: OnboardingFlowProps) => {
       <Card className="w-full max-w-md shadow-card">
         <CardHeader className="text-center pb-4">
           <CardTitle className="text-2xl font-bold text-primary">
-            Welcome to DisciplineBoost! 🚀
+            Welcome to Elevare! 🚀
           </CardTitle>
           <p className="text-muted-foreground">
             Let's personalize your journey to better habits
