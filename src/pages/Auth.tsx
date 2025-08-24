@@ -9,7 +9,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, Heart } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { LogoProcessor } from '@/components/LogoProcessor';
 
 export default function Auth() {
   const [isLoading, setIsLoading] = useState(false);
@@ -138,13 +137,11 @@ export default function Auth() {
   };
 
   return (
-    <>
-      <LogoProcessor />
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-secondary/5 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-secondary/5 p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <div className="flex items-center justify-center mb-4">
-            <img src="/elevare-logo-new.png" alt="Elevare Logo" className="h-12 w-12 mr-3" />
+            <img src="/lovable-uploads/b9652677-f866-4618-b962-58aac2a1d050.png" alt="Elevare Logo" className="h-12 w-12 mr-3" />
             <h1 className="text-2xl font-bold text-foreground">Elevare</h1>
           </div>
           <p className="text-muted-foreground">Transform your habits and elevate your life</p>
@@ -310,7 +307,6 @@ export default function Auth() {
           By continuing, you agree to our terms of service and privacy policy.
         </p>
       </div>
-      </div>
-    </>
+    </div>
   );
 }
