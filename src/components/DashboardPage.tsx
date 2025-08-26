@@ -12,6 +12,7 @@ import { GoalNotifications } from "@/components/GoalNotifications";
 export const DashboardPage = () => {
   const { user } = useAuth();
   const [currentStreak, setCurrentStreak] = useState(0);
+  const [personalBestStreak, setPersonalBestStreak] = useState(0);
   const [weeklyGoal, setWeeklyGoal] = useState(5);
   const [completedThisWeek, setCompletedThisWeek] = useState(0);
   const [achievements, setAchievements] = useState<any[]>([]);
@@ -32,12 +33,15 @@ export const DashboardPage = () => {
       // Load streak data
       const { data: streakData } = await supabase
         .from('streaks')
-        .select('current_count, last_updated')
+        .select('current_count, best_count, last_updated')
         .eq('user_id', user.id)
         .eq('streak_type', 'daily_checkin')
         .maybeSingle();
 
       if (streakData) {
+        // Always set personal best
+        setPersonalBestStreak(streakData.best_count || 0);
+        
         // Check if streak should be reset due to missed days
         const today = new Date().toISOString().split('T')[0];
         const yesterday = new Date();
@@ -55,6 +59,7 @@ export const DashboardPage = () => {
         }
       } else {
         setCurrentStreak(0);
+        setPersonalBestStreak(0);
       }
 
       // Load weekly progress (check-ins this week)
@@ -134,10 +139,16 @@ export const DashboardPage = () => {
                 <span className="text-3xl font-bold">{currentStreak}</span>
                 <span className="text-sm opacity-90">days</span>
               </div>
+              <p className="text-sm opacity-80 mt-2">
+                {currentStreak > 0 
+                  ? "Keep it up!" 
+                  : "Let's go again — you've got this!"
+                }
+              </p>
             </div>
             <div className="text-right">
-              <Badge variant="secondary" className="bg-white/20 text-white border-white/30">
-                Personal Best!
+              <Badge variant="secondary" className="bg-white/20 text-white border-white/30 mb-2">
+                Personal Best: {personalBestStreak}
               </Badge>
             </div>
           </div>
