@@ -471,9 +471,11 @@ Please analyze my recent mood trend and provide personalized feedback based on m
                 </p>
               </div>
             </div>
-            <Badge className={hasCheckedInToday ? 'bg-green-200 text-green-800 border-green-300' : 'bg-white/20 text-white border-white/30'}>
-              {hasCheckedInToday ? 'Completed!' : 'Keep it up!'}
-            </Badge>
+            {hasCheckedInToday && (
+              <Badge className="bg-green-200 text-green-800 border-green-300">
+                Completed!
+              </Badge>
+            )}
           </div>
         </CardContent>
       </Card>
