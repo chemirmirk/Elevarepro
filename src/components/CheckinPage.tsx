@@ -28,6 +28,7 @@ export const CheckinPage = () => {
   const [challengesFaced, setChallengesFaced] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentStreak, setCurrentStreak] = useState(0);
+  const [personalBestStreak, setPersonalBestStreak] = useState(0);
   const [moodData, setMoodData] = useState<number[]>([]);
   const [hasCheckedInToday, setHasCheckedInToday] = useState(false);
   const [todayCheckIn, setTodayCheckIn] = useState<any>(null);
@@ -154,6 +155,9 @@ export const CheckinPage = () => {
       if (error) throw error;
       
       if (data) {
+        // Always set personal best
+        setPersonalBestStreak(data.best_count || 0);
+        
         // Check if streak should be reset due to missed days
         const today = new Date().toISOString().split('T')[0];
         const yesterday = new Date();
@@ -171,6 +175,7 @@ export const CheckinPage = () => {
         }
       } else {
         setCurrentStreak(0);
+        setPersonalBestStreak(0);
       }
     } catch (error) {
       console.error('Error loading streak data:', error);
@@ -463,11 +468,19 @@ Please analyze my recent mood trend and provide personalized feedback based on m
               <div>
                 <p className={`text-sm ${hasCheckedInToday ? 'text-green-600' : 'opacity-90'}`}>Check-in Streak</p>
                 <p className="text-xl font-bold">{currentStreak} days</p>
+                <p className={`text-xs ${hasCheckedInToday ? 'text-green-600' : 'opacity-80'} mt-1`}>
+                  {currentStreak > 0 
+                    ? "Nice work, keep the streak alive!" 
+                    : "Every day is a new chance — let's start again!"
+                  }
+                </p>
               </div>
             </div>
-            <Badge className={hasCheckedInToday ? 'bg-green-200 text-green-800 border-green-300' : 'bg-white/20 text-white border-white/30'}>
-              {hasCheckedInToday ? 'Completed!' : 'Keep it up!'}
-            </Badge>
+            <div className="text-right">
+              <Badge className={hasCheckedInToday ? 'bg-green-200 text-green-800 border-green-300' : 'bg-white/20 text-white border-white/30 mb-2'}>
+                {hasCheckedInToday ? 'Completed!' : `Personal Best: ${personalBestStreak}`}
+              </Badge>
+            </div>
           </div>
         </CardContent>
       </Card>
