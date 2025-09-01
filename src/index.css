@@ -2,14 +2,14 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Elevare Design System - Refreshing wellness app with motivational colors
+/* Elevare Design System - Clean and motivating purple theme
 All colors MUST be HSL format.
 */
 
 @layer base {
   :root {
-    /* Core backgrounds - Soft Blue #E6F0FA */
-    --background: 206 50% 95%; /* Soft Blue background */
+    /* Core backgrounds - Clean White */
+    --background: 0 0% 100%; /* Clean white background */
     --foreground: 0 0% 13%; /* Deep Gray #212121 */
 
     /* Card and surface colors */
@@ -19,75 +19,75 @@ All colors MUST be HSL format.
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 13%;
 
-    /* Primary Action Buttons - Fresh Green #4CAF50 */
-    --primary: 122 39% 49%; /* Fresh Green */
+    /* Primary Action Buttons - Motivating Purple #6A0DAD */
+    --primary: 279 93% 36%; /* Motivating Purple */
     --primary-foreground: 0 0% 100%;
-    --primary-glow: 122 39% 65%; /* Lighter green for effects */
+    --primary-glow: 279 93% 50%; /* Lighter purple for effects */
 
-    /* Secondary - Motivational Messages - Light Purple #B39DDB */
-    --secondary: 261 42% 75%; /* Light Purple */
+    /* Secondary - Lavender Purple #9370DB */
+    --secondary: 270 60% 65%; /* Lavender Purple */
     --secondary-foreground: 0 0% 13%;
 
-    /* Success Green - same as primary for consistency */
-    --success: 122 39% 49%; /* Fresh Green */
+    /* Success Purple - consistent with theme */
+    --success: 279 93% 36%; /* Same as primary */
     --success-foreground: 0 0% 100%;
 
-    /* Warning/Alerts - Soft Orange #FFA726 */
-    --warning: 37 100% 58%; /* Soft Orange */
-    --warning-foreground: 0 0% 13%;
+    /* Warning - Soft Purple Variant */
+    --warning: 285 50% 55%; /* Soft Purple Warning */
+    --warning-foreground: 0 0% 100%;
 
-    /* Destructive - Cautious Red #EF5350 */
-    --destructive: 4 82% 63%; /* Cautious Red */
+    /* Destructive - Deep Purple Red */
+    --destructive: 320 80% 45%; /* Purple-Red */
     --destructive-foreground: 0 0% 100%;
 
-    /* Highlights & Accents - Vibrant Yellow #FFEB3B */
-    --accent: 56 100% 62%; /* Vibrant Yellow */
+    /* Highlights & Accents - Soft Purple Highlight #B19CD9 */
+    --accent: 272 48% 73%; /* Soft Purple Highlight */
     --accent-foreground: 0 0% 13%;
 
-    /* Progress/Goals - Energetic Lime #CDDC39 */
-    --progress: 66 57% 54%; /* Energetic Lime */
-    --progress-foreground: 0 0% 13%;
+    /* Progress/Goals - Purple Progress */
+    --progress: 279 93% 36%; /* Same motivating purple */
+    --progress-foreground: 0 0% 100%;
 
     /* Neutral colors */
-    --muted: 206 50% 90%; /* Lighter soft blue */
+    --muted: 270 20% 95%; /* Very light purple tint */
     --muted-foreground: 0 0% 46%; /* Cool Gray #757575 */
 
-    --border: 206 50% 85%;
-    --input: 206 50% 85%;
-    --ring: 122 39% 49%; /* Match primary */
+    --border: 270 20% 90%;
+    --input: 270 20% 90%;
+    --ring: 279 93% 36%; /* Match primary */
 
     --radius: 1rem; /* More rounded for mobile */
 
-    /* Beautiful gradients using new color scheme */
+    /* Beautiful gradients using new purple color scheme */
     --gradient-primary: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary-glow)) 100%);
-    --gradient-success: linear-gradient(135deg, hsl(var(--success)) 0%, hsl(122 39% 60%) 100%);
-    --gradient-secondary: linear-gradient(135deg, hsl(var(--secondary)) 0%, hsl(261 42% 80%) 100%);
+    --gradient-success: linear-gradient(135deg, hsl(var(--success)) 0%, hsl(279 93% 50%) 100%);
+    --gradient-secondary: linear-gradient(135deg, hsl(var(--secondary)) 0%, hsl(272 48% 78%) 100%);
     --gradient-hero: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--secondary)) 100%);
-    --gradient-progress: linear-gradient(135deg, hsl(var(--progress)) 0%, hsl(66 57% 65%) 100%);
+    --gradient-progress: linear-gradient(135deg, hsl(var(--progress)) 0%, hsl(279 93% 50%) 100%);
     
-    /* Shadows with brand colors */
+    /* Shadows with purple brand colors */
     --shadow-primary: 0 4px 20px -2px hsl(var(--primary) / 0.3);
     --shadow-success: 0 4px 20px -2px hsl(var(--success) / 0.3);
-    --shadow-card: 0 4px 6px -1px hsl(220 22% 24% / 0.1);
+    --shadow-card: 0 4px 6px -1px hsl(270 20% 70% / 0.1);
     --shadow-progress: 0 4px 20px -2px hsl(var(--progress) / 0.3);
     
     /* Mobile optimized spacing */
     --mobile-padding: 1rem;
     --mobile-gap: 0.75rem;
 
-    /* Sidebar colors */
-    --sidebar-background: 206 50% 98%;
+    /* Sidebar colors with purple theme */
+    --sidebar-background: 270 20% 98%;
     --sidebar-foreground: 0 0% 13%;
-    --sidebar-primary: 0 0% 13%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 206 50% 95%;
+    --sidebar-primary: 279 93% 36%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 270 20% 95%;
     --sidebar-accent-foreground: 0 0% 13%;
-    --sidebar-border: 206 50% 85%;
-    --sidebar-ring: 122 39% 49%;
+    --sidebar-border: 270 20% 90%;
+    --sidebar-ring: 279 93% 36%;
   }
 
   .dark {
-    /* Dark mode maintains the same color identity */
+    /* Dark mode maintains the same purple theme */
     --background: 0 0% 7%; /* Dark background */
     --foreground: 0 0% 95%;
 
@@ -97,44 +97,44 @@ All colors MUST be HSL format.
     --popover: 0 0% 9%;
     --popover-foreground: 0 0% 95%;
 
-    /* Keep brand colors consistent in dark mode */
-    --primary: 122 39% 49%; /* Same Fresh Green */
+    /* Keep purple brand colors consistent in dark mode */
+    --primary: 279 93% 50%; /* Slightly brighter purple for dark mode */
     --primary-foreground: 0 0% 100%;
-    --primary-glow: 122 39% 65%;
+    --primary-glow: 279 93% 65%; /* Even brighter for glow */
 
-    --secondary: 261 42% 75%; /* Same Light Purple */
+    --secondary: 270 60% 70%; /* Slightly brighter lavender */
     --secondary-foreground: 0 0% 13%;
 
-    --success: 122 39% 49%; /* Same Fresh Green */
+    --success: 279 93% 50%; /* Same bright purple */
     --success-foreground: 0 0% 100%;
 
-    --warning: 37 100% 58%; /* Same Soft Orange */
-    --warning-foreground: 0 0% 13%;
+    --warning: 285 50% 60%; /* Bright purple warning */
+    --warning-foreground: 0 0% 100%;
 
-    --destructive: 4 82% 63%; /* Same Cautious Red */
+    --destructive: 320 80% 55%; /* Bright purple-red */
     --destructive-foreground: 0 0% 100%;
 
-    --accent: 56 100% 62%; /* Same Vibrant Yellow */
+    --accent: 272 48% 78%; /* Bright soft purple highlight */
     --accent-foreground: 0 0% 13%;
 
-    --progress: 66 57% 54%; /* Same Energetic Lime */
-    --progress-foreground: 0 0% 13%;
+    --progress: 279 93% 50%; /* Same bright purple */
+    --progress-foreground: 0 0% 100%;
 
     --muted: 0 0% 15%;
     --muted-foreground: 0 0% 60%;
 
     --border: 0 0% 15%;
     --input: 0 0% 15%;
-    --ring: 122 39% 49%;
+    --ring: 279 93% 50%;
     
-    /* Dark mode gradients */
+    /* Dark mode gradients with purple theme */
     --gradient-primary: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary-glow)) 100%);
-    --gradient-success: linear-gradient(135deg, hsl(var(--success)) 0%, hsl(122 39% 60%) 100%);
-    --gradient-secondary: linear-gradient(135deg, hsl(var(--secondary)) 0%, hsl(261 42% 80%) 100%);
+    --gradient-success: linear-gradient(135deg, hsl(var(--success)) 0%, hsl(279 93% 65%) 100%);
+    --gradient-secondary: linear-gradient(135deg, hsl(var(--secondary)) 0%, hsl(272 48% 85%) 100%);
     --gradient-hero: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--secondary)) 100%);
-    --gradient-progress: linear-gradient(135deg, hsl(var(--progress)) 0%, hsl(66 57% 65%) 100%);
+    --gradient-progress: linear-gradient(135deg, hsl(var(--progress)) 0%, hsl(279 93% 65%) 100%);
     
-    /* Dark mode shadows */
+    /* Dark mode shadows with purple theme */
     --shadow-primary: 0 4px 20px -2px hsl(var(--primary) / 0.4);
     --shadow-success: 0 4px 20px -2px hsl(var(--success) / 0.4);
     --shadow-card: 0 4px 6px -1px hsl(0 0% 0% / 0.3);
