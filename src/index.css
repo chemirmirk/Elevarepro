@@ -24,28 +24,28 @@ All colors MUST be HSL format.
     --primary-foreground: 0 0% 100%;
     --primary-glow: 279 93% 50%; /* Lighter purple for effects */
 
-    /* Secondary - Lavender Purple #9370DB */
-    --secondary: 270 60% 65%; /* Lavender Purple */
-    --secondary-foreground: 0 0% 13%;
+    /* Secondary - Vibrant Blue #007BFF */
+    --secondary: 212 100% 50%; /* Vibrant Blue for trust and calm */
+    --secondary-foreground: 0 0% 100%;
 
-    /* Success Purple - consistent with theme */
-    --success: 279 93% 36%; /* Same as primary */
+    /* Success - Keep purple for motivation */
+    --success: 279 93% 36%; /* Same motivating purple */
     --success-foreground: 0 0% 100%;
 
-    /* Warning - Soft Purple Variant */
-    --warning: 285 50% 55%; /* Soft Purple Warning */
+    /* Warning - Soft Blue Variant */
+    --warning: 210 100% 56%; /* Dodge Blue for warnings */
     --warning-foreground: 0 0% 100%;
 
     /* Destructive - Deep Purple Red */
     --destructive: 320 80% 45%; /* Purple-Red */
     --destructive-foreground: 0 0% 100%;
 
-    /* Highlights & Accents - Soft Purple Highlight #B19CD9 */
-    --accent: 272 48% 73%; /* Soft Purple Highlight */
+    /* Highlights & Accents - Light Sky Blue #87CEFA for hover states */
+    --accent: 203 92% 75%; /* Light Sky Blue for hover highlights */
     --accent-foreground: 0 0% 13%;
 
-    /* Progress/Goals - Purple Progress */
-    --progress: 279 93% 36%; /* Same motivating purple */
+    /* Progress/Goals - Purple-Blue blend */
+    --progress: 279 93% 36%; /* Motivating purple base */
     --progress-foreground: 0 0% 100%;
 
     /* Neutral colors */
@@ -58,18 +58,18 @@ All colors MUST be HSL format.
 
     --radius: 1rem; /* More rounded for mobile */
 
-    /* Beautiful gradients using new purple color scheme */
+    /* Beautiful gradients blending purple and blue */
     --gradient-primary: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary-glow)) 100%);
-    --gradient-success: linear-gradient(135deg, hsl(var(--success)) 0%, hsl(279 93% 50%) 100%);
-    --gradient-secondary: linear-gradient(135deg, hsl(var(--secondary)) 0%, hsl(272 48% 78%) 100%);
+    --gradient-success: linear-gradient(135deg, hsl(var(--success)) 0%, hsl(212 100% 60%) 100%);
+    --gradient-secondary: linear-gradient(135deg, hsl(var(--secondary)) 0%, hsl(203 92% 80%) 100%);
     --gradient-hero: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--secondary)) 100%);
-    --gradient-progress: linear-gradient(135deg, hsl(var(--progress)) 0%, hsl(279 93% 50%) 100%);
+    --gradient-progress: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--secondary)) 50%, hsl(203 92% 75%) 100%);
     
-    /* Shadows with purple brand colors */
+    /* Shadows with purple-blue brand colors */
     --shadow-primary: 0 4px 20px -2px hsl(var(--primary) / 0.3);
     --shadow-success: 0 4px 20px -2px hsl(var(--success) / 0.3);
-    --shadow-card: 0 4px 6px -1px hsl(270 20% 70% / 0.1);
-    --shadow-progress: 0 4px 20px -2px hsl(var(--progress) / 0.3);
+    --shadow-card: 0 4px 6px -1px hsl(210 20% 70% / 0.1);
+    --shadow-progress: 0 4px 20px -2px hsl(var(--secondary) / 0.3);
     
     /* Mobile optimized spacing */
     --mobile-padding: 1rem;
@@ -97,24 +97,24 @@ All colors MUST be HSL format.
     --popover: 0 0% 9%;
     --popover-foreground: 0 0% 95%;
 
-    /* Keep purple brand colors consistent in dark mode */
+    /* Keep purple-blue brand colors consistent in dark mode */
     --primary: 279 93% 50%; /* Slightly brighter purple for dark mode */
     --primary-foreground: 0 0% 100%;
     --primary-glow: 279 93% 65%; /* Even brighter for glow */
 
-    --secondary: 270 60% 70%; /* Slightly brighter lavender */
-    --secondary-foreground: 0 0% 13%;
+    --secondary: 212 100% 60%; /* Brighter blue for dark mode */
+    --secondary-foreground: 0 0% 100%;
 
     --success: 279 93% 50%; /* Same bright purple */
     --success-foreground: 0 0% 100%;
 
-    --warning: 285 50% 60%; /* Bright purple warning */
+    --warning: 210 100% 65%; /* Bright blue warning */
     --warning-foreground: 0 0% 100%;
 
     --destructive: 320 80% 55%; /* Bright purple-red */
     --destructive-foreground: 0 0% 100%;
 
-    --accent: 272 48% 78%; /* Bright soft purple highlight */
+    --accent: 203 92% 80%; /* Bright light blue highlight */
     --accent-foreground: 0 0% 13%;
 
     --progress: 279 93% 50%; /* Same bright purple */
@@ -127,18 +127,18 @@ All colors MUST be HSL format.
     --input: 0 0% 15%;
     --ring: 279 93% 50%;
     
-    /* Dark mode gradients with purple theme */
+    /* Dark mode gradients blending purple and blue */
     --gradient-primary: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary-glow)) 100%);
-    --gradient-success: linear-gradient(135deg, hsl(var(--success)) 0%, hsl(279 93% 65%) 100%);
-    --gradient-secondary: linear-gradient(135deg, hsl(var(--secondary)) 0%, hsl(272 48% 85%) 100%);
+    --gradient-success: linear-gradient(135deg, hsl(var(--success)) 0%, hsl(212 100% 70%) 100%);
+    --gradient-secondary: linear-gradient(135deg, hsl(var(--secondary)) 0%, hsl(203 92% 85%) 100%);
     --gradient-hero: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--secondary)) 100%);
-    --gradient-progress: linear-gradient(135deg, hsl(var(--progress)) 0%, hsl(279 93% 65%) 100%);
+    --gradient-progress: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--secondary)) 50%, hsl(203 92% 80%) 100%);
     
-    /* Dark mode shadows with purple theme */
+    /* Dark mode shadows with purple-blue theme */
     --shadow-primary: 0 4px 20px -2px hsl(var(--primary) / 0.4);
     --shadow-success: 0 4px 20px -2px hsl(var(--success) / 0.4);
     --shadow-card: 0 4px 6px -1px hsl(0 0% 0% / 0.3);
-    --shadow-progress: 0 4px 20px -2px hsl(var(--progress) / 0.4);
+    --shadow-progress: 0 4px 20px -2px hsl(var(--secondary) / 0.4);
   }
 }
 
