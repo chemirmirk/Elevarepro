@@ -24,11 +24,11 @@ All colors MUST be HSL format.
     --primary-foreground: 0 0% 100%;
     --primary-glow: 279 93% 50%; /* Lighter purple for effects */
 
-    /* Secondary - Vibrant Blue #007BFF */
-    --secondary: 212 100% 50%; /* Vibrant Blue for trust and calm */
+    /* Secondary - Vibrant Blue #1E90FF */
+    --secondary: 210 100% 56%; /* Dodge Blue for trust and calm */
     --secondary-foreground: 0 0% 100%;
 
-    /* Success - Keep purple for motivation */
+    /* Success - Purple-Blue blend */
     --success: 279 93% 36%; /* Same motivating purple */
     --success-foreground: 0 0% 100%;
 
@@ -40,11 +40,12 @@ All colors MUST be HSL format.
     --destructive: 320 80% 45%; /* Purple-Red */
     --destructive-foreground: 0 0% 100%;
 
-    /* Highlights & Accents - Light Sky Blue #87CEFA for hover states */
+    /* Highlights & Accents - Light gradient colors for hover */
     --accent: 203 92% 75%; /* Light Sky Blue for hover highlights */
     --accent-foreground: 0 0% 13%;
+    --accent-purple: 272 48% 73%; /* Light Purple for hover gradients */
 
-    /* Progress/Goals - Purple-Blue blend */
+    /* Progress/Goals - Purple-Blue gradient base */
     --progress: 279 93% 36%; /* Motivating purple base */
     --progress-foreground: 0 0% 100%;
 
@@ -58,12 +59,14 @@ All colors MUST be HSL format.
 
     --radius: 1rem; /* More rounded for mobile */
 
-    /* Beautiful gradients blending purple and blue */
-    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary-glow)) 100%);
-    --gradient-success: linear-gradient(135deg, hsl(var(--success)) 0%, hsl(212 100% 60%) 100%);
-    --gradient-secondary: linear-gradient(135deg, hsl(var(--secondary)) 0%, hsl(203 92% 80%) 100%);
-    --gradient-hero: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--secondary)) 100%);
-    --gradient-progress: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--secondary)) 50%, hsl(203 92% 75%) 100%);
+    /* Enhanced purple-blue gradients for modern appeal */
+    --gradient-primary: linear-gradient(135deg, hsl(279 93% 36%) 0%, hsl(210 100% 56%) 100%); /* Purple → Blue */
+    --gradient-secondary: linear-gradient(135deg, hsl(210 100% 56%) 0%, hsl(279 93% 36%) 100%); /* Blue → Purple for secondary buttons */
+    --gradient-success: linear-gradient(135deg, hsl(279 93% 36%) 0%, hsl(210 100% 56%) 100%); /* Purple → Blue success */
+    --gradient-hero: linear-gradient(135deg, hsl(279 93% 36%) 0%, hsl(210 100% 56%) 100%); /* Main hero gradient */
+    --gradient-progress: linear-gradient(90deg, hsl(279 93% 36%) 0%, hsl(245 100% 48%) 50%, hsl(210 100% 56%) 100%); /* Smooth purple-blue progress */
+    --gradient-hover: linear-gradient(135deg, hsl(272 48% 73%) 0%, hsl(203 92% 75%) 100%); /* Light Purple → Light Blue for hover */
+    --gradient-chart: linear-gradient(180deg, hsl(279 93% 36%) 0%, hsl(210 100% 56%) 100%); /* Vertical gradient for charts */
     
     /* Shadows with purple-blue brand colors */
     --shadow-primary: 0 4px 20px -2px hsl(var(--primary) / 0.3);
@@ -102,8 +105,9 @@ All colors MUST be HSL format.
     --primary-foreground: 0 0% 100%;
     --primary-glow: 279 93% 65%; /* Even brighter for glow */
 
-    --secondary: 212 100% 60%; /* Brighter blue for dark mode */
+    --secondary: 210 100% 65%; /* Brighter blue for dark mode */
     --secondary-foreground: 0 0% 100%;
+    --accent-purple: 272 48% 78%; /* Brighter light purple for dark mode */
 
     --success: 279 93% 50%; /* Same bright purple */
     --success-foreground: 0 0% 100%;
@@ -127,12 +131,14 @@ All colors MUST be HSL format.
     --input: 0 0% 15%;
     --ring: 279 93% 50%;
     
-    /* Dark mode gradients blending purple and blue */
-    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary-glow)) 100%);
-    --gradient-success: linear-gradient(135deg, hsl(var(--success)) 0%, hsl(212 100% 70%) 100%);
-    --gradient-secondary: linear-gradient(135deg, hsl(var(--secondary)) 0%, hsl(203 92% 85%) 100%);
-    --gradient-hero: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--secondary)) 100%);
-    --gradient-progress: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--secondary)) 50%, hsl(203 92% 80%) 100%);
+    /* Enhanced dark mode purple-blue gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(279 93% 50%) 0%, hsl(210 100% 65%) 100%); /* Bright Purple → Blue */
+    --gradient-secondary: linear-gradient(135deg, hsl(210 100% 65%) 0%, hsl(279 93% 50%) 100%); /* Blue → Purple for secondary */
+    --gradient-success: linear-gradient(135deg, hsl(279 93% 50%) 0%, hsl(210 100% 65%) 100%); /* Purple → Blue success */
+    --gradient-hero: linear-gradient(135deg, hsl(279 93% 50%) 0%, hsl(210 100% 65%) 100%); /* Main hero gradient */
+    --gradient-progress: linear-gradient(90deg, hsl(279 93% 50%) 0%, hsl(245 100% 58%) 50%, hsl(210 100% 65%) 100%); /* Smooth progress */
+    --gradient-hover: linear-gradient(135deg, hsl(272 48% 78%) 0%, hsl(203 92% 80%) 100%); /* Light hover gradient */
+    --gradient-chart: linear-gradient(180deg, hsl(279 93% 50%) 0%, hsl(210 100% 65%) 100%); /* Chart gradient */
     
     /* Dark mode shadows with purple-blue theme */
     --shadow-primary: 0 4px 20px -2px hsl(var(--primary) / 0.4);
@@ -184,6 +190,37 @@ All colors MUST be HSL format.
   
   .gradient-progress {
     background: var(--gradient-progress);
+  }
+  
+  .gradient-hover {
+    background: var(--gradient-hover);
+  }
+  
+  .gradient-chart {
+    background: var(--gradient-chart);
+  }
+  
+  /* Interactive gradient buttons with hover effects */
+  .btn-gradient {
+    background: var(--gradient-primary);
+    transition: all 0.3s ease;
+  }
+  
+  .btn-gradient:hover {
+    background: var(--gradient-hover);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-primary);
+  }
+  
+  .btn-secondary-gradient {
+    background: var(--gradient-secondary);
+    transition: all 0.3s ease;
+  }
+  
+  .btn-secondary-gradient:hover {
+    background: var(--gradient-primary);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-progress);
   }
   
   .shadow-primary {
