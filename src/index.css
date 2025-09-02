@@ -59,14 +59,14 @@ All colors MUST be HSL format.
 
     --radius: 1rem; /* More rounded for mobile */
 
-    /* Enhanced purple-blue gradients for modern appeal */
-    --gradient-primary: linear-gradient(135deg, hsl(279 93% 36%) 0%, hsl(210 100% 56%) 100%); /* Purple → Blue */
-    --gradient-secondary: linear-gradient(135deg, hsl(210 100% 56%) 0%, hsl(279 93% 36%) 100%); /* Blue → Purple for secondary buttons */
-    --gradient-success: linear-gradient(135deg, hsl(279 93% 36%) 0%, hsl(210 100% 56%) 100%); /* Purple → Blue success */
-    --gradient-hero: linear-gradient(135deg, hsl(279 93% 36%) 0%, hsl(210 100% 56%) 100%); /* Main hero gradient */
-    --gradient-progress: linear-gradient(90deg, hsl(279 93% 36%) 0%, hsl(245 100% 48%) 50%, hsl(210 100% 56%) 100%); /* Smooth purple-blue progress */
-    --gradient-hover: linear-gradient(135deg, hsl(272 48% 73%) 0%, hsl(203 92% 75%) 100%); /* Light Purple → Light Blue for hover */
-    --gradient-chart: linear-gradient(180deg, hsl(279 93% 36%) 0%, hsl(210 100% 56%) 100%); /* Vertical gradient for charts */
+    /* Purple-blue gradients with exact colors */
+    --gradient-primary: linear-gradient(135deg, #6A0DAD, #1E90FF); /* Purple → Blue */
+    --gradient-secondary: linear-gradient(135deg, #1E90FF, #6A0DAD); /* Blue → Purple for secondary buttons */
+    --gradient-success: linear-gradient(135deg, #6A0DAD, #1E90FF); /* Purple → Blue success */
+    --gradient-hero: linear-gradient(135deg, #6A0DAD, #1E90FF); /* Main hero gradient */
+    --gradient-progress: linear-gradient(90deg, #6A0DAD 0%, #1E90FF 100%); /* Smooth purple-blue progress */
+    --gradient-hover: linear-gradient(135deg, #8E44AD, #3498DB); /* Brighter Purple → Blue for hover */
+    --gradient-chart: linear-gradient(180deg, #6A0DAD, #1E90FF); /* Vertical gradient for charts */
     
     /* Shadows with purple-blue brand colors */
     --shadow-primary: 0 4px 20px -2px hsl(var(--primary) / 0.3);
@@ -131,14 +131,14 @@ All colors MUST be HSL format.
     --input: 0 0% 15%;
     --ring: 279 93% 50%;
     
-    /* Enhanced dark mode purple-blue gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(279 93% 50%) 0%, hsl(210 100% 65%) 100%); /* Bright Purple → Blue */
-    --gradient-secondary: linear-gradient(135deg, hsl(210 100% 65%) 0%, hsl(279 93% 50%) 100%); /* Blue → Purple for secondary */
-    --gradient-success: linear-gradient(135deg, hsl(279 93% 50%) 0%, hsl(210 100% 65%) 100%); /* Purple → Blue success */
-    --gradient-hero: linear-gradient(135deg, hsl(279 93% 50%) 0%, hsl(210 100% 65%) 100%); /* Main hero gradient */
-    --gradient-progress: linear-gradient(90deg, hsl(279 93% 50%) 0%, hsl(245 100% 58%) 50%, hsl(210 100% 65%) 100%); /* Smooth progress */
-    --gradient-hover: linear-gradient(135deg, hsl(272 48% 78%) 0%, hsl(203 92% 80%) 100%); /* Light hover gradient */
-    --gradient-chart: linear-gradient(180deg, hsl(279 93% 50%) 0%, hsl(210 100% 65%) 100%); /* Chart gradient */
+    /* Purple-blue gradients with exact colors - Dark mode */
+    --gradient-primary: linear-gradient(135deg, #6A0DAD, #1E90FF); /* Purple → Blue */
+    --gradient-secondary: linear-gradient(135deg, #1E90FF, #6A0DAD); /* Blue → Purple for secondary */
+    --gradient-success: linear-gradient(135deg, #6A0DAD, #1E90FF); /* Purple → Blue success */
+    --gradient-hero: linear-gradient(135deg, #6A0DAD, #1E90FF); /* Main hero gradient */
+    --gradient-progress: linear-gradient(90deg, #6A0DAD 0%, #1E90FF 100%); /* Smooth progress */
+    --gradient-hover: linear-gradient(135deg, #8E44AD, #3498DB); /* Brighter hover gradient */
+    --gradient-chart: linear-gradient(180deg, #6A0DAD, #1E90FF); /* Chart gradient */
     
     /* Dark mode shadows with purple-blue theme */
     --shadow-primary: 0 4px 20px -2px hsl(var(--primary) / 0.4);
@@ -203,22 +203,28 @@ All colors MUST be HSL format.
   /* Interactive gradient buttons with hover effects */
   .btn-gradient {
     background: var(--gradient-primary);
+    color: #000000;
+    font-weight: bold;
     transition: all 0.3s ease;
   }
   
   .btn-gradient:hover {
     background: var(--gradient-hover);
+    color: #000000;
     transform: translateY(-1px);
     box-shadow: var(--shadow-primary);
   }
   
   .btn-secondary-gradient {
     background: var(--gradient-secondary);
+    color: #000000;
+    font-weight: bold;
     transition: all 0.3s ease;
   }
   
   .btn-secondary-gradient:hover {
-    background: var(--gradient-primary);
+    background: var(--gradient-hover);
+    color: #000000;
     transform: translateY(-1px);
     box-shadow: var(--shadow-progress);
   }
