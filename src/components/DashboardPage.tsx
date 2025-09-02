@@ -289,7 +289,7 @@ export const DashboardPage = () => {
         <Button className="h-12 gradient-primary shadow-primary text-white">
           Start Check-in
         </Button>
-        <Button variant="outline" className="h-12">
+        <Button variant="gradient" className="h-12">
           View Calendar
         </Button>
       </div>
