@@ -117,7 +117,7 @@ export const PhotoUpload = ({ onPhotoAdded, onClose }: PhotoUploadProps) => {
               className="hidden"
             />
             <Button
-              variant="outline"
+              variant="white"
               onClick={() => document.getElementById('photo-upload')?.click()}
               className="w-full"
             >
