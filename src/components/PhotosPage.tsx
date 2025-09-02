@@ -175,7 +175,7 @@ export const PhotosPage = () => {
                 </Button>
                 <Button 
                   onClick={() => setShowUpload(true)}
-                  variant="outline" 
+                  variant="gradient" 
                   className="h-12"
                 >
                   <Upload className="h-4 w-4 mr-2" />
