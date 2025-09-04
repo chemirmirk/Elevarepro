@@ -10,13 +10,14 @@ import { CalendarPage } from "@/components/CalendarPage";
 import { PhotosPage } from "@/components/PhotosPage";
 import { ChatPage } from "@/components/ChatPage";
 import { GoalsPage } from "@/components/GoalsPage";
+import { WorkoutPage } from "@/components/WorkoutPage";
 import { OnboardingFlow } from "@/components/OnboardingFlow";
 import { ProfilePictureUpload } from "@/components/ProfilePictureUpload";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { LogOut, User, Settings, Calendar, Bell } from "lucide-react";
+import { LogOut, User, Settings, Calendar, Bell, Dumbbell } from "lucide-react";
 
 const Index = () => {
   const { user, signOut } = useAuth();
@@ -148,6 +149,8 @@ const Index = () => {
         return <CheckinPage />;
       case 'goals':
         return <GoalsPage />;
+      case 'workout':
+        return <WorkoutPage />;
       case 'reminders':
         return <RemindersPage />;
       case 'calendar':
@@ -224,6 +227,15 @@ const Index = () => {
             Calendar
           </Button>
           <Button
+            variant={activeTab === 'workout' ? 'gradient' : 'outline'}
+            size="sm"
+            onClick={() => setActiveTab('workout')}
+            className="hidden md:flex"
+          >
+            <Dumbbell className="h-4 w-4 mr-2" />
+            Workout
+          </Button>
+          <Button
             variant={activeTab === 'reminders' ? 'default' : 'outline'}
             size="sm"
             onClick={() => setActiveTab('reminders')}
@@ -241,6 +253,14 @@ const Index = () => {
             className="md:hidden p-2"
           >
             <Calendar className="h-4 w-4" />
+          </Button>
+          <Button
+            variant={activeTab === 'workout' ? 'gradient' : 'outline'}
+            size="sm"
+            onClick={() => setActiveTab('workout')}
+            className="md:hidden p-2"
+          >
+            <Dumbbell className="h-4 w-4" />
           </Button>
           <Button
             variant={activeTab === 'reminders' ? 'default' : 'outline'}
