@@ -314,14 +314,14 @@ export const WorkoutPage = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div className="flex items-center gap-2">
+      <div className="text-center">
+        <div className="flex items-center justify-center gap-2 mb-4">
           <Dumbbell className="h-6 w-6 text-primary" />
           <h1 className="text-xl md:text-2xl font-bold">Workout Tracker</h1>
         </div>
         
         {!isActiveWorkout && (
-          <div className="flex flex-col gap-2 sm:flex-row">
+          <div className="flex flex-col gap-2 sm:flex-row sm:justify-center">
             <Input
               placeholder="Workout name (optional)"
               value={workoutName}
