@@ -661,26 +661,48 @@ export const WorkoutPage = () => {
                 Recent Workouts
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-4">
               {workoutSessions.length > 0 ? (
                 <div className="space-y-3">
-                  {workoutSessions.slice(0, 3).map((session) => (
-                    <div key={session.id} className="flex items-center justify-between p-3 rounded-lg border">
-                      <div>
-                        <p className="font-medium">{session.name || `Workout ${format(new Date(session.date), 'MMM dd')}`}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {format(new Date(session.date), 'MMM dd, yyyy')}
-                          {session.duration_minutes && ` • ${session.duration_minutes} min`}
-                        </p>
+                  {workoutSessions.slice(0, 5).map((session) => (
+                    <div key={session.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 rounded-lg border bg-card hover:bg-muted/50 transition-colors">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium truncate">{session.name || `Workout ${format(new Date(session.date), 'MMM dd')}`}</p>
+                        <div className="flex flex-wrap items-center gap-2 mt-1">
+                          <p className="text-sm text-muted-foreground">
+                            {format(new Date(session.date), 'MMM dd, yyyy')}
+                          </p>
+                          {session.duration_minutes && (
+                            <div className="flex items-center gap-1">
+                              <Timer className="h-3 w-3 text-muted-foreground" />
+                              <span className="text-sm text-muted-foreground">{session.duration_minutes} min</span>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                      <Badge variant="outline">{(session as any).workout_sets?.length || 0} exercises</Badge>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <Badge variant="outline" className="whitespace-nowrap">
+                          {(session as any).workout_sets?.length || 0} exercises
+                        </Badge>
+                      </div>
                     </div>
                   ))}
+                  
+                  {workoutSessions.length > 5 && (
+                    <div className="text-center pt-2">
+                      <Button variant="ghost" size="sm" className="text-muted-foreground">
+                        View All Workouts
+                      </Button>
+                    </div>
+                  )}
                 </div>
               ) : (
-                <div className="text-center py-8">
-                  <History className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                  <p className="text-muted-foreground">No workouts yet. Start your first workout above!</p>
+                <div className="text-center py-12">
+                  <div className="p-3 rounded-full bg-muted/50 w-fit mx-auto mb-4">
+                    <History className="h-8 w-8 text-muted-foreground" />
+                  </div>
+                  <h4 className="font-medium mb-2">No workouts yet</h4>
+                  <p className="text-sm text-muted-foreground mb-4">Start your first workout above to see your history here</p>
                 </div>
               )}
             </CardContent>
