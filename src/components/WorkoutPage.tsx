@@ -314,21 +314,21 @@ export const WorkoutPage = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="flex items-center gap-2">
           <Dumbbell className="h-6 w-6 text-primary" />
-          <h1 className="text-2xl font-bold">Workout Tracker</h1>
+          <h1 className="text-xl md:text-2xl font-bold">Workout Tracker</h1>
         </div>
         
         {!isActiveWorkout && (
-          <div className="flex gap-2">
+          <div className="flex flex-col gap-2 sm:flex-row">
             <Input
               placeholder="Workout name (optional)"
               value={workoutName}
               onChange={(e) => setWorkoutName(e.target.value)}
-              className="w-48"
+              className="w-full sm:w-48"
             />
-            <Button onClick={startWorkout} variant="gradient">
+            <Button onClick={startWorkout} variant="gradient" className="w-full sm:w-auto">
               <Plus className="h-4 w-4 mr-2" />
               Start Workout
             </Button>
@@ -355,7 +355,7 @@ export const WorkoutPage = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="flex gap-2">
+                  <div className="flex flex-col gap-2 sm:flex-row">
                     <Select value={selectedExercise} onValueChange={setSelectedExercise}>
                       <SelectTrigger className="flex-1">
                         <SelectValue placeholder="Select an exercise" />
@@ -368,59 +368,61 @@ export const WorkoutPage = () => {
                         ))}
                       </SelectContent>
                     </Select>
-                    <Button onClick={addExerciseToWorkout} disabled={!selectedExercise}>
-                      Add Exercise
-                    </Button>
-                    <Dialog open={showNewExerciseDialog} onOpenChange={setShowNewExerciseDialog}>
-                      <DialogTrigger asChild>
-                        <Button variant="outline">
-                          <Plus className="h-4 w-4" />
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle>Create New Exercise</DialogTitle>
-                        </DialogHeader>
-                        <div className="space-y-4">
-                          <div>
-                            <Label htmlFor="name">Exercise Name</Label>
-                            <Input
-                              id="name"
-                              value={newExercise.name}
-                              onChange={(e) => setNewExercise(prev => ({ ...prev, name: e.target.value }))}
-                            />
-                          </div>
-                          <div>
-                            <Label htmlFor="muscle_group">Muscle Group</Label>
-                            <Select value={newExercise.muscle_group} onValueChange={(value) => setNewExercise(prev => ({ ...prev, muscle_group: value }))}>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select muscle group" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="Chest">Chest</SelectItem>
-                                <SelectItem value="Back">Back</SelectItem>
-                                <SelectItem value="Shoulders">Shoulders</SelectItem>
-                                <SelectItem value="Arms">Arms</SelectItem>
-                                <SelectItem value="Legs">Legs</SelectItem>
-                                <SelectItem value="Core">Core</SelectItem>
-                                <SelectItem value="Cardio">Cardio</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <div>
-                            <Label htmlFor="description">Description (optional)</Label>
-                            <Textarea
-                              id="description"
-                              value={newExercise.description}
-                              onChange={(e) => setNewExercise(prev => ({ ...prev, description: e.target.value }))}
-                            />
-                          </div>
-                          <Button onClick={createNewExercise} variant="gradient" className="w-full">
-                            Create Exercise
+                    <div className="flex gap-2">
+                      <Button onClick={addExerciseToWorkout} disabled={!selectedExercise} className="flex-1 sm:flex-none">
+                        Add Exercise
+                      </Button>
+                      <Dialog open={showNewExerciseDialog} onOpenChange={setShowNewExerciseDialog}>
+                        <DialogTrigger asChild>
+                          <Button variant="outline">
+                            <Plus className="h-4 w-4" />
                           </Button>
-                        </div>
-                      </DialogContent>
-                    </Dialog>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>Create New Exercise</DialogTitle>
+                          </DialogHeader>
+                          <div className="space-y-4">
+                            <div>
+                              <Label htmlFor="name">Exercise Name</Label>
+                              <Input
+                                id="name"
+                                value={newExercise.name}
+                                onChange={(e) => setNewExercise(prev => ({ ...prev, name: e.target.value }))}
+                              />
+                            </div>
+                            <div>
+                              <Label htmlFor="muscle_group">Muscle Group</Label>
+                              <Select value={newExercise.muscle_group} onValueChange={(value) => setNewExercise(prev => ({ ...prev, muscle_group: value }))}>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select muscle group" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="Chest">Chest</SelectItem>
+                                  <SelectItem value="Back">Back</SelectItem>
+                                  <SelectItem value="Shoulders">Shoulders</SelectItem>
+                                  <SelectItem value="Arms">Arms</SelectItem>
+                                  <SelectItem value="Legs">Legs</SelectItem>
+                                  <SelectItem value="Core">Core</SelectItem>
+                                  <SelectItem value="Cardio">Cardio</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div>
+                              <Label htmlFor="description">Description (optional)</Label>
+                              <Textarea
+                                id="description"
+                                value={newExercise.description}
+                                onChange={(e) => setNewExercise(prev => ({ ...prev, description: e.target.value }))}
+                              />
+                            </div>
+                            <Button onClick={createNewExercise} variant="gradient" className="w-full">
+                              Create Exercise
+                            </Button>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
+                    </div>
                   </div>
 
                   {currentWorkout.map((workout) => (
@@ -430,41 +432,44 @@ export const WorkoutPage = () => {
                       </CardHeader>
                       <CardContent className="space-y-4">
                         {workout.sets.map((set, index) => (
-                          <div key={index} className="flex items-center gap-4 p-2 bg-muted rounded">
+                          <div key={index} className="flex flex-wrap items-center gap-2 p-2 bg-muted rounded">
                             <Badge variant="outline">Set {index + 1}</Badge>
-                            <span>{set.reps} reps</span>
-                            {set.weight && <span>{set.weight} lbs</span>}
-                            {set.rest_seconds && <span>{set.rest_seconds}s rest</span>}
+                            <span className="text-sm">{set.reps} reps</span>
+                            {set.weight && <span className="text-sm">{set.weight} lbs</span>}
+                            {set.rest_seconds && <span className="text-sm">{set.rest_seconds}s rest</span>}
                           </div>
                         ))}
                         
-                        <div className="flex gap-2">
-                          <Input
-                            placeholder="Reps"
-                            type="number"
-                            value={currentSet.reps}
-                            onChange={(e) => setCurrentSet(prev => ({ ...prev, reps: e.target.value }))}
-                            className="w-20"
-                          />
-                          <Input
-                            placeholder="Weight (lbs)"
-                            type="number"
-                            step="0.25"
-                            value={currentSet.weight}
-                            onChange={(e) => setCurrentSet(prev => ({ ...prev, weight: e.target.value }))}
-                            className="w-32"
-                          />
-                          <Input
-                            placeholder="Rest (sec)"
-                            type="number"
-                            value={currentSet.rest_seconds}
-                            onChange={(e) => setCurrentSet(prev => ({ ...prev, rest_seconds: e.target.value }))}
-                            className="w-28"
-                          />
+                        <div className="flex flex-col gap-2 sm:flex-row">
+                          <div className="flex gap-2 flex-1">
+                            <Input
+                              placeholder="Reps"
+                              type="number"
+                              value={currentSet.reps}
+                              onChange={(e) => setCurrentSet(prev => ({ ...prev, reps: e.target.value }))}
+                              className="flex-1 min-w-0"
+                            />
+                            <Input
+                              placeholder="Weight"
+                              type="number"
+                              step="0.25"
+                              value={currentSet.weight}
+                              onChange={(e) => setCurrentSet(prev => ({ ...prev, weight: e.target.value }))}
+                              className="flex-1 min-w-0"
+                            />
+                            <Input
+                              placeholder="Rest"
+                              type="number"
+                              value={currentSet.rest_seconds}
+                              onChange={(e) => setCurrentSet(prev => ({ ...prev, rest_seconds: e.target.value }))}
+                              className="flex-1 min-w-0"
+                            />
+                          </div>
                           <Button 
                             onClick={() => addSetToExercise(workout.exercise_id)}
                             disabled={!currentSet.reps}
                             variant="gradient"
+                            className="w-full sm:w-auto"
                           >
                             Add Set
                           </Button>
@@ -493,10 +498,10 @@ export const WorkoutPage = () => {
             workoutSessions.map((session) => (
               <Card key={session.id}>
                 <CardHeader>
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <CardTitle className="flex items-center gap-2">
                       <History className="h-5 w-5" />
-                      {session.name || `Workout ${format(new Date(session.date), 'MMM dd, yyyy')}`}
+                      <span className="truncate">{session.name || `Workout ${format(new Date(session.date), 'MMM dd, yyyy')}`}</span>
                     </CardTitle>
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       {session.duration_minutes && (
@@ -512,11 +517,11 @@ export const WorkoutPage = () => {
                 <CardContent>
                   <div className="space-y-2">
                     {(session as any).workout_sets?.map((set: any) => (
-                      <div key={set.id} className="flex items-center gap-4 p-2 bg-muted rounded">
-                        <span className="font-medium">{set.exercises?.name}</span>
+                      <div key={set.id} className="flex flex-wrap items-center gap-2 p-2 bg-muted rounded">
+                        <span className="font-medium text-sm truncate flex-1 min-w-0">{set.exercises?.name}</span>
                         <Badge variant="outline">Set {set.set_number}</Badge>
-                        <span>{set.reps} reps</span>
-                        {set.weight && <span>{set.weight} lbs</span>}
+                        <span className="text-sm">{set.reps} reps</span>
+                        {set.weight && <span className="text-sm">{set.weight} lbs</span>}
                       </div>
                     ))}
                   </div>
