@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dumbbell, Plus, History, Edit, Trash2, Clock, Weight, TrendingUp } from "lucide-react";
+import { Dumbbell, Plus, History, Play, Check, Timer, RotateCcw, Target, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -43,14 +43,27 @@ interface WorkoutSet {
   notes?: string;
 }
 
-interface CurrentWorkout {
-  exercise_id: string;
-  exercise_name: string;
-  sets: Array<{
-    reps: number;
-    weight?: number;
-    rest_seconds?: number;
-  }>;
+interface WorkoutPlan {
+  id: string;
+  name: string;
+  exercises: Exercise[];
+  description?: string;
+}
+
+interface ExerciseSet {
+  id?: string;
+  reps?: number;
+  duration?: number;
+  weight?: number;
+  completed: boolean;
+}
+
+interface WorkoutExercise extends Exercise {
+  sets: ExerciseSet[];
+  targetSets: number;
+  targetReps?: number;
+  targetDuration?: number;
+  isCompleted: boolean;
 }
 
 export const WorkoutPage = () => {
@@ -59,13 +72,16 @@ export const WorkoutPage = () => {
   
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [workoutSessions, setWorkoutSessions] = useState<WorkoutSession[]>([]);
-  const [currentWorkout, setCurrentWorkout] = useState<CurrentWorkout[]>([]);
-  const [selectedExercise, setSelectedExercise] = useState<string>("");
-  const [isActiveWorkout, setIsActiveWorkout] = useState(false);
+  const [activeWorkout, setActiveWorkout] = useState<WorkoutExercise[]>([]);
+  const [isWorkoutActive, setIsWorkoutActive] = useState(false);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
-  const [workoutName, setWorkoutName] = useState("");
+  const [workoutStartTime, setWorkoutStartTime] = useState<Date | null>(null);
   const [loading, setLoading] = useState(true);
-  const [showNewExerciseDialog, setShowNewExerciseDialog] = useState(false);
+  const [showCreatePlanDialog, setShowCreatePlanDialog] = useState(false);
+  const [showCreateExerciseDialog, setShowCreateExerciseDialog] = useState(false);
+  
+  // Quick start templates
+  const [selectedTemplate, setSelectedTemplate] = useState<string>("");
   
   // New exercise form
   const [newExercise, setNewExercise] = useState({
@@ -74,12 +90,36 @@ export const WorkoutPage = () => {
     description: ""
   });
 
-  // Current set form
-  const [currentSet, setCurrentSet] = useState({
-    reps: "",
-    weight: "",
-    rest_seconds: ""
+  // Workout plan form
+  const [newPlan, setNewPlan] = useState({
+    name: "",
+    description: "",
+    exercises: [] as string[]
   });
+
+  // Predefined workout templates
+  const workoutTemplates = {
+    "push": {
+      name: "Push Day",
+      exercises: ["Push-ups", "Bench Press", "Shoulder Press", "Tricep Dips"],
+      description: "Upper body pushing movements"
+    },
+    "pull": {
+      name: "Pull Day", 
+      exercises: ["Pull-ups", "Rows", "Lat Pulldown", "Bicep Curls"],
+      description: "Upper body pulling movements"
+    },
+    "legs": {
+      name: "Leg Day",
+      exercises: ["Squats", "Deadlifts", "Lunges", "Calf Raises"],
+      description: "Lower body strength and power"
+    },
+    "cardio": {
+      name: "Cardio Blast",
+      exercises: ["Burpees", "Mountain Climbers", "Jumping Jacks", "High Knees"],
+      description: "High intensity cardio workout"
+    }
+  };
 
   useEffect(() => {
     if (user) {
@@ -132,25 +172,49 @@ export const WorkoutPage = () => {
     }
   };
 
-  const startWorkout = async () => {
+  const startWorkoutFromTemplate = (templateKey: string) => {
+    const template = workoutTemplates[templateKey as keyof typeof workoutTemplates];
+    if (!template) return;
+
+    const workoutExercises = template.exercises.map(exerciseName => {
+      const exercise = exercises.find(e => e.name.toLowerCase().includes(exerciseName.toLowerCase()));
+      if (!exercise) return null;
+      
+      return {
+        ...exercise,
+        sets: [
+          { completed: false },
+          { completed: false },
+          { completed: false }
+        ],
+        targetSets: 3,
+        targetReps: exerciseName.includes("Cardio") ? undefined : 12,
+        targetDuration: exerciseName.includes("Cardio") ? 30 : undefined,
+        isCompleted: false
+      } as WorkoutExercise;
+    }).filter(Boolean) as WorkoutExercise[];
+
+    startWorkout(template.name, workoutExercises);
+  };
+
+  const startCustomWorkout = () => {
+    setActiveWorkout([]);
+    setIsWorkoutActive(true);
+    setWorkoutStartTime(new Date());
+    startWorkoutSession("Custom Workout");
+  };
+
+  const startWorkout = async (workoutName: string, exercises: WorkoutExercise[] = []) => {
     try {
-      const { data, error } = await supabase
-        .from('workout_sessions')
-        .insert({
-          user_id: user?.id,
-          name: workoutName || `Workout ${format(new Date(), 'MMM dd, yyyy')}`,
-          date: new Date().toISOString().split('T')[0]
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      setActiveSessionId(data.id);
-      setIsActiveWorkout(true);
+      const sessionId = await startWorkoutSession(workoutName);
+      setActiveWorkout(exercises);
+      setIsWorkoutActive(true);
+      setWorkoutStartTime(new Date());
+      setActiveSessionId(sessionId);
+      
       toast({
-        title: "Workout Started",
-        description: "Your workout session has begun!"
+        title: "Workout Started! 💪",
+        description: `${workoutName} session has begun. Let's crush it!`
       });
     } catch (error) {
       console.error('Error starting workout:', error);
@@ -162,70 +226,104 @@ export const WorkoutPage = () => {
     }
   };
 
-  const addExerciseToWorkout = () => {
-    if (!selectedExercise) return;
-    
-    const exercise = exercises.find(e => e.id === selectedExercise);
+  const startWorkoutSession = async (name: string): Promise<string> => {
+    const { data, error } = await supabase
+      .from('workout_sessions')
+      .insert({
+        user_id: user?.id,
+        name,
+        date: new Date().toISOString().split('T')[0]
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data.id;
+  };
+
+  const addExerciseToWorkout = (exerciseId: string) => {
+    const exercise = exercises.find(e => e.id === exerciseId);
     if (!exercise) return;
 
-    const existingExercise = currentWorkout.find(w => w.exercise_id === selectedExercise);
-    if (existingExercise) {
+    const workoutExercise: WorkoutExercise = {
+      ...exercise,
+      sets: [
+        { completed: false },
+        { completed: false },
+        { completed: false }
+      ],
+      targetSets: 3,
+      targetReps: 12,
+      isCompleted: false
+    };
+
+    setActiveWorkout(prev => [...prev, workoutExercise]);
+  };
+
+  const updateExerciseSet = (exerciseIndex: number, setIndex: number, updates: Partial<ExerciseSet>) => {
+    setActiveWorkout(prev => 
+      prev.map((exercise, eIndex) => 
+        eIndex === exerciseIndex
+          ? {
+              ...exercise,
+              sets: exercise.sets.map((set, sIndex) => 
+                sIndex === setIndex ? { ...set, ...updates } : set
+              )
+            }
+          : exercise
+      )
+    );
+  };
+
+  const markSetCompleted = async (exerciseIndex: number, setIndex: number) => {
+    const exercise = activeWorkout[exerciseIndex];
+    const set = exercise.sets[setIndex];
+    
+    if (!set.reps && !set.duration) {
       toast({
-        title: "Exercise Already Added",
-        description: "This exercise is already in your current workout"
+        title: "Add Details",
+        description: "Please enter reps or duration before marking as complete",
+        variant: "destructive"
       });
       return;
     }
 
-    setCurrentWorkout(prev => [...prev, {
-      exercise_id: selectedExercise,
-      exercise_name: exercise.name,
-      sets: []
-    }]);
-    setSelectedExercise("");
-  };
-
-  const addSetToExercise = async (exerciseId: string) => {
-    if (!currentSet.reps) return;
-
-    const reps = parseInt(currentSet.reps);
-    const weight = currentSet.weight ? parseFloat(currentSet.weight) : undefined;
-    const rest_seconds = currentSet.rest_seconds ? parseInt(currentSet.rest_seconds) : undefined;
-
-    // Add to current workout state
-    setCurrentWorkout(prev => prev.map(workout => {
-      if (workout.exercise_id === exerciseId) {
-        return {
-          ...workout,
-          sets: [...workout.sets, { reps, weight, rest_seconds }]
-        };
-      }
-      return workout;
-    }));
-
     // Save to database
     try {
-      const setNumber = currentWorkout.find(w => w.exercise_id === exerciseId)?.sets.length + 1 || 1;
-      
       const { error } = await supabase
         .from('workout_sets')
         .insert({
           user_id: user?.id,
           session_id: activeSessionId,
-          exercise_id: exerciseId,
-          set_number: setNumber,
-          reps,
-          weight,
-          rest_seconds
+          exercise_id: exercise.id,
+          set_number: setIndex + 1,
+          reps: set.reps || null,
+          weight: set.weight || null,
+          rest_seconds: set.duration || null
         });
 
       if (error) throw error;
 
-      setCurrentSet({ reps: "", weight: "", rest_seconds: "" });
-      toast({
-        title: "Set Added",
-        description: `Added set ${setNumber} to ${currentWorkout.find(w => w.exercise_id === exerciseId)?.exercise_name}`
-      });
+      updateExerciseSet(exerciseIndex, setIndex, { completed: true });
+      
+      // Check if exercise is complete
+      const updatedSets = [...exercise.sets];
+      updatedSets[setIndex] = { ...set, completed: true };
+      const allSetsCompleted = updatedSets.every(s => s.completed);
+      
+      if (allSetsCompleted) {
+        setActiveWorkout(prev => 
+          prev.map((ex, i) => 
+            i === exerciseIndex ? { ...ex, isCompleted: true } : ex
+          )
+        );
+        
+        toast({
+          title: "Exercise Complete! 🎉",
+          description: `Great job on ${exercise.name}!`
+        });
+      }
+
     } catch (error) {
       console.error('Error saving set:', error);
       toast({
@@ -237,26 +335,30 @@ export const WorkoutPage = () => {
   };
 
   const finishWorkout = async () => {
+    if (!workoutStartTime) return;
+
     try {
-      // Update session with duration (simplified calculation)
+      const duration = Math.round((Date.now() - workoutStartTime.getTime()) / (1000 * 60));
+      
       const { error } = await supabase
         .from('workout_sessions')
-        .update({
-          duration_minutes: 60 // This could be calculated based on actual time
-        })
+        .update({ duration_minutes: duration })
         .eq('id', activeSessionId);
 
       if (error) throw error;
 
-      setIsActiveWorkout(false);
+      const completedExercises = activeWorkout.filter(ex => ex.isCompleted).length;
+      const totalExercises = activeWorkout.length;
+
+      setIsWorkoutActive(false);
       setActiveSessionId(null);
-      setCurrentWorkout([]);
-      setWorkoutName("");
+      setActiveWorkout([]);
+      setWorkoutStartTime(null);
       loadWorkoutHistory();
       
       toast({
-        title: "Workout Complete",
-        description: "Great job! Your workout has been saved."
+        title: "Workout Complete! 🎉",
+        description: `Great job! You completed ${completedExercises}/${totalExercises} exercises in ${duration} minutes.`
       });
     } catch (error) {
       console.error('Error finishing workout:', error);
@@ -288,7 +390,7 @@ export const WorkoutPage = () => {
 
       setExercises(prev => [...prev, data]);
       setNewExercise({ name: "", muscle_group: "", description: "" });
-      setShowNewExerciseDialog(false);
+      setShowCreateExerciseDialog(false);
       
       toast({
         title: "Exercise Created",
@@ -304,6 +406,17 @@ export const WorkoutPage = () => {
     }
   };
 
+  const getWorkoutProgress = () => {
+    if (activeWorkout.length === 0) return 0;
+    const completedExercises = activeWorkout.filter(ex => ex.isCompleted).length;
+    return (completedExercises / activeWorkout.length) * 100;
+  };
+
+  const getExerciseProgress = (exercise: WorkoutExercise) => {
+    const completedSets = exercise.sets.filter(set => set.completed).length;
+    return (completedSets / exercise.sets.length) * 100;
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-8">
@@ -313,51 +426,61 @@ export const WorkoutPage = () => {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="text-center">
-        <div className="flex items-center justify-center gap-2 mb-4">
-          <Dumbbell className="h-6 w-6 text-primary" />
-          <h1 className="text-xl md:text-2xl font-bold">Workout Tracker</h1>
+    <div className="space-y-6 max-w-4xl mx-auto">
+      {/* Header */}
+      <div className="text-center space-y-4">
+        <div className="flex items-center justify-center gap-3">
+          <div className="p-2 rounded-lg bg-gradient-primary/10">
+            <Dumbbell className="h-6 w-6 text-primary" />
+          </div>
+          <h1 className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+            Workout Tracker
+          </h1>
         </div>
         
-        {!isActiveWorkout && (
-          <div className="flex flex-col gap-2 sm:flex-row sm:justify-center">
-            <Input
-              placeholder="Workout name (optional)"
-              value={workoutName}
-              onChange={(e) => setWorkoutName(e.target.value)}
-              className="w-full sm:w-48"
-            />
-            <Button onClick={startWorkout} variant="gradient" className="w-full sm:w-auto">
-              <Plus className="h-4 w-4 mr-2" />
-              Start Workout
-            </Button>
+        {isWorkoutActive && (
+          <div className="flex items-center justify-center gap-4 p-4 rounded-lg bg-muted/50">
+            <div className="flex items-center gap-2">
+              <Timer className="h-4 w-4 text-primary" />
+              <span className="text-sm font-medium">
+                {workoutStartTime && `${Math.round((Date.now() - workoutStartTime.getTime()) / (1000 * 60))} min`}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Target className="h-4 w-4 text-primary" />
+              <span className="text-sm font-medium">
+                {activeWorkout.filter(ex => ex.isCompleted).length}/{activeWorkout.length} exercises
+              </span>
+            </div>
+            <Progress value={getWorkoutProgress()} className="w-24 h-2" />
           </div>
         )}
       </div>
 
-      <Tabs defaultValue="current" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="current">Current Workout</TabsTrigger>
-          <TabsTrigger value="history">History</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="current" className="space-y-4">
-          {isActiveWorkout ? (
-            <div className="space-y-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center justify-between">
-                    <span>Active Workout</span>
-                    <Button onClick={finishWorkout} variant="gradient">
-                      Finish Workout
-                    </Button>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex flex-col gap-2 sm:flex-row">
-                    <Select value={selectedExercise} onValueChange={setSelectedExercise}>
-                      <SelectTrigger className="flex-1">
+      {isWorkoutActive ? (
+        /* Active Workout View */
+        <div className="space-y-6">
+          {/* Workout Controls */}
+          <div className="flex flex-col sm:flex-row gap-3 justify-between items-center p-4 rounded-lg border bg-card">
+            <div className="flex items-center gap-2">
+              <Check className="h-5 w-5 text-green-500" />
+              <span className="font-semibold">Active Workout</span>
+            </div>
+            <div className="flex gap-2">
+              <Dialog open={showCreateExerciseDialog} onOpenChange={setShowCreateExerciseDialog}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Exercise
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Add Exercise to Workout</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <Select onValueChange={addExerciseToWorkout}>
+                      <SelectTrigger>
                         <SelectValue placeholder="Select an exercise" />
                       </SelectTrigger>
                       <SelectContent>
@@ -368,179 +491,249 @@ export const WorkoutPage = () => {
                         ))}
                       </SelectContent>
                     </Select>
-                    <div className="flex gap-2">
-                      <Button onClick={addExerciseToWorkout} disabled={!selectedExercise} className="flex-1 sm:flex-none">
-                        Add Exercise
-                      </Button>
-                      <Dialog open={showNewExerciseDialog} onOpenChange={setShowNewExerciseDialog}>
-                        <DialogTrigger asChild>
-                          <Button variant="outline">
-                            <Plus className="h-4 w-4" />
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle>Create New Exercise</DialogTitle>
-                          </DialogHeader>
-                          <div className="space-y-4">
-                            <div>
-                              <Label htmlFor="name">Exercise Name</Label>
-                              <Input
-                                id="name"
-                                value={newExercise.name}
-                                onChange={(e) => setNewExercise(prev => ({ ...prev, name: e.target.value }))}
-                              />
-                            </div>
-                            <div>
-                              <Label htmlFor="muscle_group">Muscle Group</Label>
-                              <Select value={newExercise.muscle_group} onValueChange={(value) => setNewExercise(prev => ({ ...prev, muscle_group: value }))}>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Select muscle group" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="Chest">Chest</SelectItem>
-                                  <SelectItem value="Back">Back</SelectItem>
-                                  <SelectItem value="Shoulders">Shoulders</SelectItem>
-                                  <SelectItem value="Arms">Arms</SelectItem>
-                                  <SelectItem value="Legs">Legs</SelectItem>
-                                  <SelectItem value="Core">Core</SelectItem>
-                                  <SelectItem value="Cardio">Cardio</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-                            <div>
-                              <Label htmlFor="description">Description (optional)</Label>
-                              <Textarea
-                                id="description"
-                                value={newExercise.description}
-                                onChange={(e) => setNewExercise(prev => ({ ...prev, description: e.target.value }))}
-                              />
-                            </div>
-                            <Button onClick={createNewExercise} variant="gradient" className="w-full">
-                              Create Exercise
-                            </Button>
-                          </div>
-                        </DialogContent>
-                      </Dialog>
+                  </div>
+                </DialogContent>
+              </Dialog>
+              <Button onClick={finishWorkout} variant="gradient">
+                Finish Workout
+              </Button>
+            </div>
+          </div>
+
+          {/* Exercise Cards */}
+          <div className="grid gap-4">
+            {activeWorkout.map((exercise, exerciseIndex) => (
+              <Card key={exercise.id} className={`transition-all ${exercise.isCompleted ? 'opacity-75 bg-green-50 border-green-200' : ''}`}>
+                <CardHeader className="pb-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className={`p-2 rounded-lg ${exercise.isCompleted ? 'bg-green-100' : 'bg-primary/10'}`}>
+                        {exercise.isCompleted ? (
+                          <Check className="h-4 w-4 text-green-600" />
+                        ) : (
+                          <Dumbbell className="h-4 w-4 text-primary" />
+                        )}
+                      </div>
+                      <div>
+                        <CardTitle className="text-lg">{exercise.name}</CardTitle>
+                        <p className="text-sm text-muted-foreground">{exercise.muscle_group}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <Progress value={getExerciseProgress(exercise)} className="w-16 h-2 mb-1" />
+                      <p className="text-xs text-muted-foreground">
+                        {exercise.sets.filter(s => s.completed).length}/{exercise.sets.length} sets
+                      </p>
                     </div>
                   </div>
-
-                  {currentWorkout.map((workout) => (
-                    <Card key={workout.exercise_id}>
-                      <CardHeader>
-                        <CardTitle className="text-lg">{workout.exercise_name}</CardTitle>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        {workout.sets.map((set, index) => (
-                          <div key={index} className="flex flex-wrap items-center gap-2 p-2 bg-muted rounded">
-                            <Badge variant="outline">Set {index + 1}</Badge>
-                            <span className="text-sm">{set.reps} reps</span>
-                            {set.weight && <span className="text-sm">{set.weight} lbs</span>}
-                            {set.rest_seconds && <span className="text-sm">{set.rest_seconds}s rest</span>}
-                          </div>
-                        ))}
-                        
-                        <div className="flex flex-col gap-2 sm:flex-row">
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {exercise.sets.map((set, setIndex) => (
+                    <div key={setIndex} className={`flex items-center gap-3 p-3 rounded-lg border ${set.completed ? 'bg-green-50 border-green-200' : 'bg-muted/30'}`}>
+                      <Badge variant={set.completed ? "default" : "outline"} className="min-w-[60px]">
+                        Set {setIndex + 1}
+                      </Badge>
+                      
+                      {!set.completed ? (
+                        <>
                           <div className="flex gap-2 flex-1">
                             <Input
                               placeholder="Reps"
                               type="number"
-                              value={currentSet.reps}
-                              onChange={(e) => setCurrentSet(prev => ({ ...prev, reps: e.target.value }))}
-                              className="flex-1 min-w-0"
+                              value={set.reps || ""}
+                              onChange={(e) => updateExerciseSet(exerciseIndex, setIndex, { reps: parseInt(e.target.value) || undefined })}
+                              className="w-20"
                             />
                             <Input
                               placeholder="Weight"
                               type="number"
                               step="0.25"
-                              value={currentSet.weight}
-                              onChange={(e) => setCurrentSet(prev => ({ ...prev, weight: e.target.value }))}
-                              className="flex-1 min-w-0"
-                            />
-                            <Input
-                              placeholder="Rest"
-                              type="number"
-                              value={currentSet.rest_seconds}
-                              onChange={(e) => setCurrentSet(prev => ({ ...prev, rest_seconds: e.target.value }))}
-                              className="flex-1 min-w-0"
+                              value={set.weight || ""}
+                              onChange={(e) => updateExerciseSet(exerciseIndex, setIndex, { weight: parseFloat(e.target.value) || undefined })}
+                              className="w-24"
                             />
                           </div>
-                          <Button 
-                            onClick={() => addSetToExercise(workout.exercise_id)}
-                            disabled={!currentSet.reps}
+                          <Button
+                            onClick={() => markSetCompleted(exerciseIndex, setIndex)}
+                            disabled={!set.reps && !set.duration}
+                            size="sm"
                             variant="gradient"
-                            className="w-full sm:w-auto"
                           >
-                            Add Set
+                            <Check className="h-4 w-4" />
                           </Button>
+                        </>
+                      ) : (
+                        <div className="flex items-center gap-4 flex-1">
+                          <span className="text-sm font-medium">{set.reps} reps</span>
+                          {set.weight && <span className="text-sm">{set.weight} lbs</span>}
+                          <Check className="h-4 w-4 text-green-600 ml-auto" />
                         </div>
-                      </CardContent>
-                    </Card>
+                      )}
+                    </div>
                   ))}
                 </CardContent>
               </Card>
-            </div>
-          ) : (
-            <Card>
-              <CardContent className="flex flex-col items-center justify-center py-12">
-                <Dumbbell className="h-12 w-12 text-muted-foreground mb-4" />
-                <h3 className="text-lg font-semibold mb-2">No Active Workout</h3>
-                <p className="text-muted-foreground text-center mb-4">
-                  Start a new workout session to begin tracking your exercises
-                </p>
-              </CardContent>
-            </Card>
-          )}
-        </TabsContent>
+            ))}
+          </div>
 
-        <TabsContent value="history" className="space-y-4">
-          {workoutSessions.length > 0 ? (
-            workoutSessions.map((session) => (
-              <Card key={session.id}>
-                <CardHeader>
-                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                    <CardTitle className="flex items-center gap-2">
-                      <History className="h-5 w-5" />
-                      <span className="truncate">{session.name || `Workout ${format(new Date(session.date), 'MMM dd, yyyy')}`}</span>
-                    </CardTitle>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      {session.duration_minutes && (
-                        <div className="flex items-center gap-1">
-                          <Clock className="h-4 w-4" />
-                          {session.duration_minutes}min
-                        </div>
-                      )}
-                      <span>{format(new Date(session.date), 'MMM dd, yyyy')}</span>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    {(session as any).workout_sets?.map((set: any) => (
-                      <div key={set.id} className="flex flex-wrap items-center gap-2 p-2 bg-muted rounded">
-                        <span className="font-medium text-sm truncate flex-1 min-w-0">{set.exercises?.name}</span>
-                        <Badge variant="outline">Set {set.set_number}</Badge>
-                        <span className="text-sm">{set.reps} reps</span>
-                        {set.weight && <span className="text-sm">{set.weight} lbs</span>}
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            ))
-          ) : (
+          {activeWorkout.length === 0 && (
             <Card>
-              <CardContent className="flex flex-col items-center justify-center py-12">
-                <History className="h-12 w-12 text-muted-foreground mb-4" />
-                <h3 className="text-lg font-semibold mb-2">No Workout History</h3>
-                <p className="text-muted-foreground text-center">
-                  Your completed workouts will appear here
-                </p>
+              <CardContent className="text-center py-12">
+                <Dumbbell className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-semibold mb-2">Add Exercises</h3>
+                <p className="text-muted-foreground mb-4">Start adding exercises to build your workout</p>
+                <Button onClick={() => setShowCreateExerciseDialog(true)} variant="gradient">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Your First Exercise
+                </Button>
               </CardContent>
             </Card>
           )}
-        </TabsContent>
-      </Tabs>
+        </div>
+      ) : (
+        /* Workout Selection View */
+        <div className="space-y-6">
+          {/* Quick Start Templates */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Play className="h-5 w-5" />
+                Quick Start Templates
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">Choose a pre-built workout plan to get started quickly</p>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {Object.entries(workoutTemplates).map(([key, template]) => (
+                  <Card key={key} className="cursor-pointer hover:shadow-md transition-shadow">
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="font-semibold">{template.name}</h4>
+                        <Button
+                          onClick={() => startWorkoutFromTemplate(key)}
+                          size="sm"
+                          variant="gradient"
+                        >
+                          Start
+                        </Button>
+                      </div>
+                      <p className="text-sm text-muted-foreground mb-2">{template.description}</p>
+                      <div className="flex flex-wrap gap-1">
+                        {template.exercises.slice(0, 3).map((exercise, index) => (
+                          <Badge key={index} variant="outline" className="text-xs">
+                            {exercise}
+                          </Badge>
+                        ))}
+                        {template.exercises.length > 3 && (
+                          <Badge variant="outline" className="text-xs">
+                            +{template.exercises.length - 3} more
+                          </Badge>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Custom Workout */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Plus className="h-5 w-5" />
+                Custom Workout
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">Build your own workout from scratch</p>
+            </CardHeader>
+            <CardContent>
+              <Button onClick={startCustomWorkout} variant="outline" className="w-full">
+                Start Custom Workout
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Workout History */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <History className="h-5 w-5" />
+                Recent Workouts
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {workoutSessions.length > 0 ? (
+                <div className="space-y-3">
+                  {workoutSessions.slice(0, 3).map((session) => (
+                    <div key={session.id} className="flex items-center justify-between p-3 rounded-lg border">
+                      <div>
+                        <p className="font-medium">{session.name || `Workout ${format(new Date(session.date), 'MMM dd')}`}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {format(new Date(session.date), 'MMM dd, yyyy')}
+                          {session.duration_minutes && ` • ${session.duration_minutes} min`}
+                        </p>
+                      </div>
+                      <Badge variant="outline">{(session as any).workout_sets?.length || 0} exercises</Badge>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <History className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                  <p className="text-muted-foreground">No workouts yet. Start your first workout above!</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Create Exercise Dialog */}
+      <Dialog open={showCreateExerciseDialog} onOpenChange={setShowCreateExerciseDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create New Exercise</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="name">Exercise Name</Label>
+              <Input
+                id="name"
+                value={newExercise.name}
+                onChange={(e) => setNewExercise(prev => ({ ...prev, name: e.target.value }))}
+              />
+            </div>
+            <div>
+              <Label htmlFor="muscle_group">Muscle Group</Label>
+              <Select value={newExercise.muscle_group} onValueChange={(value) => setNewExercise(prev => ({ ...prev, muscle_group: value }))}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select muscle group" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Chest">Chest</SelectItem>
+                  <SelectItem value="Back">Back</SelectItem>
+                  <SelectItem value="Shoulders">Shoulders</SelectItem>
+                  <SelectItem value="Arms">Arms</SelectItem>
+                  <SelectItem value="Legs">Legs</SelectItem>
+                  <SelectItem value="Core">Core</SelectItem>
+                  <SelectItem value="Cardio">Cardio</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="description">Description (optional)</Label>
+              <Textarea
+                id="description"
+                value={newExercise.description}
+                onChange={(e) => setNewExercise(prev => ({ ...prev, description: e.target.value }))}
+              />
+            </div>
+            <Button onClick={createNewExercise} variant="gradient" className="w-full">
+              Create Exercise
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
