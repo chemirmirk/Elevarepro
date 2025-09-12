@@ -108,7 +108,7 @@ const Index = () => {
               size="sm"
             />
             <span className="text-sm text-muted-foreground">
-              Welcome, {profile?.name || user?.user_metadata?.name || user?.email}
+              Welcome!
             </span>
           </div>
         <div className="flex items-center gap-2">
