@@ -219,7 +219,7 @@ const Index = () => {
             <p className="text-xs text-muted-foreground">Welcome back!</p>
           </div>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 ml-auto">
           {/* Modern desktop navigation */}
           <div className="hidden md:flex items-center gap-1 px-2 py-1 bg-muted/30 rounded-full">
             <Button
