@@ -282,7 +282,7 @@ export const ChatPage = () => {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-6rem)] max-w-md mx-auto bg-background">
+    <div className="flex flex-col h-[calc(100vh-10rem)] max-w-md mx-auto bg-background pt-2">
       {/* Header */}
       <div className="p-4 border-b bg-card">
         <div className="text-center">
