@@ -18,27 +18,28 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LogOut, User, Settings, Calendar, Bell, Dumbbell } from "lucide-react";
-
 const Index = () => {
-  const { user, signOut } = useAuth();
-  const { profile, updateProfile } = useProfile();
+  const {
+    user,
+    signOut
+  } = useAuth();
+  const {
+    profile,
+    updateProfile
+  } = useProfile();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isOnboarded, setIsOnboarded] = useState(false);
   const [loading, setLoading] = useState(true);
   const [profileDialogOpen, setProfileDialogOpen] = useState(false);
   const [editName, setEditName] = useState('');
-
   useEffect(() => {
     const checkOnboardingStatus = async () => {
       if (!user) return;
-      
       try {
-        const { data, error } = await supabase
-          .from('onboarding_data')
-          .select('id')
-          .eq('user_id', user.id)
-          .maybeSingle();
-
+        const {
+          data,
+          error
+        } = await supabase.from('onboarding_data').select('id').eq('user_id', user.id).maybeSingle();
         if (error) {
           console.error('Error checking onboarding status:', error);
           setIsOnboarded(false);
@@ -54,79 +55,57 @@ const Index = () => {
         setLoading(false);
       }
     };
-
     checkOnboardingStatus();
   }, [user]);
-
   useEffect(() => {
     if (profile?.name) {
       setEditName(profile.name);
     }
   }, [profile]);
-
   const handleProfileImageUpdate = (newImageUrl: string | null) => {
     if (profile) {
       // Update the local profile state immediately for better UX
       // The actual database update is handled by the ProfilePictureUpload component
     }
   };
-
   const handleNameUpdate = async () => {
     try {
-      await updateProfile({ name: editName.trim() });
+      await updateProfile({
+        name: editName.trim()
+      });
       setProfileDialogOpen(false);
     } catch (error) {
       console.error('Error updating name:', error);
     }
   };
-
   const handleOnboardingComplete = (data: any) => {
     console.log('Onboarding completed with data:', data);
     setIsOnboarded(true);
   };
-
   if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+    return <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
           <p className="text-muted-foreground">Loading...</p>
         </div>
-      </div>
-    );
+      </div>;
   }
-
   if (!isOnboarded) {
-    return (
-      <div className="min-h-screen bg-background">
+    return <div className="min-h-screen bg-background">
         {/* User info header */}
         <div className="flex justify-between items-center p-4 border-b bg-card">
           <div className="flex items-center gap-3">
-            <ProfilePictureUpload
-              currentImageUrl={profile?.profile_picture_url}
-              onImageUpdate={handleProfileImageUpdate}
-              size="sm"
-            />
+            <ProfilePictureUpload currentImageUrl={profile?.profile_picture_url} onImageUpdate={handleProfileImageUpdate} size="sm" />
             <span className="text-sm text-muted-foreground">
               Welcome!
             </span>
           </div>
         <div className="flex items-center gap-2">
-          <Button
-            variant={activeTab === 'calendar' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setActiveTab('calendar')}
-            className="hidden sm:flex"
-          >
+          <Button variant={activeTab === 'calendar' ? 'default' : 'outline'} size="sm" onClick={() => setActiveTab('calendar')} className="hidden sm:flex">
             <Calendar className="h-4 w-4 mr-2" />
             Calendar
           </Button>
-          <Button
-            variant={activeTab === 'reminders' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setActiveTab('reminders')}
-            className="hidden sm:flex"
-          >
+          <Button variant={activeTab === 'reminders' ? 'default' : 'outline'} size="sm" onClick={() => setActiveTab('reminders')} className="hidden sm:flex">
             <Bell className="h-4 w-4 mr-2" />
             Reminders
           </Button>
@@ -137,10 +116,8 @@ const Index = () => {
         </div>
         </div>
         <OnboardingFlow onComplete={handleOnboardingComplete} />
-      </div>
-    );
+      </div>;
   }
-
   const renderActiveTab = () => {
     switch (activeTab) {
       case 'dashboard':
@@ -163,9 +140,7 @@ const Index = () => {
         return <DashboardPage />;
     }
   };
-
-  return (
-    <div className="min-h-screen bg-background">
+  return <div className="min-h-screen bg-background">
       {/* Modern header with glassmorphism */}
       <div className="sticky top-0 z-50 glass-card border-b shadow-soft">
         <div className="flex justify-between items-center p-4 max-w-screen-xl mx-auto">
@@ -173,11 +148,7 @@ const Index = () => {
           <Dialog open={profileDialogOpen} onOpenChange={setProfileDialogOpen}>
             <DialogTrigger asChild>
               <button className="focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-full">
-                <ProfilePictureUpload
-                  currentImageUrl={profile?.profile_picture_url}
-                  onImageUpdate={handleProfileImageUpdate}
-                  size="sm"
-                />
+                <ProfilePictureUpload currentImageUrl={profile?.profile_picture_url} onImageUpdate={handleProfileImageUpdate} size="sm" />
               </button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-md">
@@ -186,20 +157,11 @@ const Index = () => {
               </DialogHeader>
               <div className="space-y-6">
                 <div className="flex justify-center">
-                  <ProfilePictureUpload
-                    currentImageUrl={profile?.profile_picture_url}
-                    onImageUpdate={handleProfileImageUpdate}
-                    size="lg"
-                  />
+                  <ProfilePictureUpload currentImageUrl={profile?.profile_picture_url} onImageUpdate={handleProfileImageUpdate} size="lg" />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="name">Display Name</Label>
-                  <Input
-                    id="name"
-                    value={editName}
-                    onChange={(e) => setEditName(e.target.value)}
-                    placeholder="Enter your name"
-                  />
+                  <Input id="name" value={editName} onChange={e => setEditName(e.target.value)} placeholder="Enter your name" />
                 </div>
                 <div className="flex justify-end gap-2">
                   <Button variant="outline" onClick={() => setProfileDialogOpen(false)}>
@@ -219,61 +181,31 @@ const Index = () => {
             <p className="text-xs text-muted-foreground">Welcome back!</p>
           </div>
         </div>
-        <div className="flex items-center gap-3 ml-auto">
+        <div className="flex items-center gap-3 ml-auto mx-0 px-[5px]">
           {/* Modern desktop navigation */}
           <div className="hidden md:flex items-center gap-1 px-2 py-1 bg-muted/30 rounded-full">
-            <Button
-              variant={activeTab === 'calendar' ? 'gradient' : 'ghost'}
-              size="sm"
-              onClick={() => setActiveTab('calendar')}
-              className="rounded-full hover-lift px-3"
-            >
+            <Button variant={activeTab === 'calendar' ? 'gradient' : 'ghost'} size="sm" onClick={() => setActiveTab('calendar')} className="rounded-full hover-lift px-3">
               <Calendar className="h-4 w-4 mr-1" />
               <span className="text-sm">Cal</span>
             </Button>
-            <Button
-              variant={activeTab === 'workout' ? 'gradient' : 'ghost'}
-              size="sm"
-              onClick={() => setActiveTab('workout')}
-              className="rounded-full hover-lift px-3"
-            >
+            <Button variant={activeTab === 'workout' ? 'gradient' : 'ghost'} size="sm" onClick={() => setActiveTab('workout')} className="rounded-full hover-lift px-3">
               <Dumbbell className="h-4 w-4 mr-1" />
               <span className="text-sm">Gym</span>
             </Button>
-            <Button
-              variant={activeTab === 'reminders' ? 'gradient' : 'ghost'}
-              size="sm"
-              onClick={() => setActiveTab('reminders')}
-              className="rounded-full hover-lift px-3"
-            >
+            <Button variant={activeTab === 'reminders' ? 'gradient' : 'ghost'} size="sm" onClick={() => setActiveTab('reminders')} className="rounded-full hover-lift px-3">
               <Bell className="h-4 w-4 mr-1" />
               <span className="text-sm">Alert</span>
             </Button>
           </div>
           
           {/* Mobile icon-only buttons */}
-          <Button
-            variant={activeTab === 'calendar' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setActiveTab('calendar')}
-            className="md:hidden p-2"
-          >
+          <Button variant={activeTab === 'calendar' ? 'default' : 'outline'} size="sm" onClick={() => setActiveTab('calendar')} className="md:hidden p-2">
             <Calendar className="h-4 w-4" />
           </Button>
-          <Button
-            variant={activeTab === 'workout' ? 'gradient' : 'outline'}
-            size="sm"
-            onClick={() => setActiveTab('workout')}
-            className="md:hidden p-2"
-          >
+          <Button variant={activeTab === 'workout' ? 'gradient' : 'outline'} size="sm" onClick={() => setActiveTab('workout')} className="md:hidden p-2">
             <Dumbbell className="h-4 w-4" />
           </Button>
-          <Button
-            variant={activeTab === 'reminders' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setActiveTab('reminders')}
-            className="md:hidden p-2"
-          >
+          <Button variant={activeTab === 'reminders' ? 'default' : 'outline'} size="sm" onClick={() => setActiveTab('reminders')} className="md:hidden p-2">
             <Bell className="h-4 w-4" />
           </Button>
           
@@ -286,8 +218,6 @@ const Index = () => {
       </div>
       {renderActiveTab()}
       <MobileTabBar activeTab={activeTab} onTabChange={setActiveTab} />
-    </div>
-  );
+    </div>;
 };
-
 export default Index;
