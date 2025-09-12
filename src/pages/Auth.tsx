@@ -141,7 +141,7 @@ export default function Auth() {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <div className="flex items-center justify-center mb-4">
-            <img src="/elevare-icon-stairs.png" alt="Elevare Logo" className="h-12 w-12 mr-3" />
+            <img src="/lovable-uploads/474fc6b8-85b3-470e-b25a-7fb5bfff667d.png" alt="Elevare Logo" className="h-24 w-auto mr-3" />
             <h1 className="text-2xl font-bold text-foreground">Elevare</h1>
           </div>
           <p className="text-muted-foreground">Transform your habits and elevate your life</p>
