@@ -221,33 +221,33 @@ const Index = () => {
         </div>
         <div className="flex items-center gap-3">
           {/* Modern desktop navigation */}
-          <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-muted/30 rounded-full">
+          <div className="hidden md:flex items-center gap-1 px-2 py-1 bg-muted/30 rounded-full">
             <Button
               variant={activeTab === 'calendar' ? 'gradient' : 'ghost'}
               size="sm"
               onClick={() => setActiveTab('calendar')}
-              className="rounded-full hover-lift"
+              className="rounded-full hover-lift px-3"
             >
-              <Calendar className="h-4 w-4 mr-2" />
-              Calendar
+              <Calendar className="h-4 w-4 mr-1" />
+              <span className="text-sm">Cal</span>
             </Button>
             <Button
               variant={activeTab === 'workout' ? 'gradient' : 'ghost'}
               size="sm"
               onClick={() => setActiveTab('workout')}
-              className="rounded-full hover-lift"
+              className="rounded-full hover-lift px-3"
             >
-              <Dumbbell className="h-4 w-4 mr-2" />
-              Workout
+              <Dumbbell className="h-4 w-4 mr-1" />
+              <span className="text-sm">Gym</span>
             </Button>
             <Button
               variant={activeTab === 'reminders' ? 'gradient' : 'ghost'}
               size="sm"
               onClick={() => setActiveTab('reminders')}
-              className="rounded-full hover-lift"
+              className="rounded-full hover-lift px-3"
             >
-              <Bell className="h-4 w-4 mr-2" />
-              Reminders
+              <Bell className="h-4 w-4 mr-1" />
+              <span className="text-sm">Alert</span>
             </Button>
           </div>
           
