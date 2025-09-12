@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { CheckCircle, Target, Dumbbell, Cigarette, ArrowRight, ArrowLeft } from "lucide-react";
+import { CheckCircle, Target, Dumbbell, Cigarette, ArrowRight, ArrowLeft, Sparkles, Calendar, MessageCircle, TrendingUp, Award, Home } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
@@ -42,7 +42,7 @@ export const OnboardingFlow = ({ onComplete }: OnboardingFlowProps) => {
     currentHabits: ''
   });
 
-  const totalSteps = 4;
+  const totalSteps = 6;
   const progress = (currentStep / totalSteps) * 100;
 
   const toggleChallenge = (challengeId: string) => {
@@ -131,13 +131,17 @@ export const OnboardingFlow = ({ onComplete }: OnboardingFlowProps) => {
   const canProceed = () => {
     switch (currentStep) {
       case 1:
-        return data.challenges.length > 0;
+        return true; // Welcome step
       case 2:
-        return data.challenges.every(challenge => data.goals[challenge as keyof typeof data.goals]);
+        return data.challenges.length > 0;
       case 3:
-        return data.motivation.trim().length > 0;
+        return data.challenges.every(challenge => data.goals[challenge as keyof typeof data.goals]);
       case 4:
+        return data.motivation.trim().length > 0;
+      case 5:
         return data.previousAttempts.trim().length > 0 && data.currentHabits.trim().length > 0;
+      case 6:
+        return true; // Final guide step
       default:
         return false;
     }
@@ -162,8 +166,51 @@ export const OnboardingFlow = ({ onComplete }: OnboardingFlowProps) => {
         </CardHeader>
 
         <CardContent className="space-y-6">
-          {/* Step 1: Challenge Selection */}
+          {/* Step 1: Welcome & Introduction */}
           {currentStep === 1 && (
+            <div className="space-y-6 animate-slide-up text-center">
+              <div className="p-6 rounded-2xl bg-gradient-primary text-white">
+                <Sparkles className="h-12 w-12 mx-auto mb-4 animate-bounce-gentle" />
+                <h3 className="text-xl font-bold mb-2">Welcome to Elevare!</h3>
+                <p className="text-sm opacity-90">Your personal transformation companion</p>
+              </div>
+              
+              <div className="space-y-4 text-left">
+                <div className="flex items-start gap-3 p-3 rounded-lg bg-primary/5">
+                  <Target className="h-5 w-5 text-primary mt-1 flex-shrink-0" />
+                  <div>
+                    <h4 className="font-semibold text-sm">Set Meaningful Goals</h4>
+                    <p className="text-xs text-muted-foreground">Track progress on habits that truly matter to you</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-start gap-3 p-3 rounded-lg bg-secondary/5">
+                  <TrendingUp className="h-5 w-5 text-secondary mt-1 flex-shrink-0" />
+                  <div>
+                    <h4 className="font-semibold text-sm">Build Streaks</h4>
+                    <p className="text-xs text-muted-foreground">Stay motivated with daily check-ins and progress tracking</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-start gap-3 p-3 rounded-lg bg-success/5">
+                  <MessageCircle className="h-5 w-5 text-success mt-1 flex-shrink-0" />
+                  <div>
+                    <h4 className="font-semibold text-sm">AI-Powered Support</h4>
+                    <p className="text-xs text-muted-foreground">Get personalized motivation and guidance 24/7</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="p-4 bg-muted/30 rounded-lg">
+                <p className="text-sm text-muted-foreground">
+                  Let's take 2 minutes to set up your personalized experience. Ready to elevate your life?
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Step 2: Challenge Selection */}
+          {currentStep === 2 && (
             <div className="space-y-4 animate-slide-up">
               <div className="text-center">
                 <h3 className="text-lg font-semibold mb-2">What challenges do you want to overcome?</h3>
@@ -206,8 +253,8 @@ export const OnboardingFlow = ({ onComplete }: OnboardingFlowProps) => {
             </div>
           )}
 
-          {/* Step 2: Goal Setting */}
-          {currentStep === 2 && (
+          {/* Step 3: Goal Setting */}
+          {currentStep === 3 && (
             <div className="space-y-6 animate-slide-up">
               <div className="text-center">
                 <h3 className="text-lg font-semibold mb-2">Set your specific goals</h3>
@@ -320,8 +367,8 @@ export const OnboardingFlow = ({ onComplete }: OnboardingFlowProps) => {
             </div>
           )}
 
-          {/* Step 3: Motivation */}
-          {currentStep === 3 && (
+          {/* Step 4: Motivation */}
+          {currentStep === 4 && (
             <div className="space-y-4 animate-slide-up">
               <div className="text-center">
                 <h3 className="text-lg font-semibold mb-2">What motivates you?</h3>
@@ -343,8 +390,8 @@ export const OnboardingFlow = ({ onComplete }: OnboardingFlowProps) => {
             </div>
           )}
 
-          {/* Step 4: Previous Attempts & Current Habits */}
-          {currentStep === 4 && (
+          {/* Step 5: Previous Attempts & Current Habits */}
+          {currentStep === 5 && (
             <div className="space-y-6 animate-slide-up">
               <div className="text-center">
                 <h3 className="text-lg font-semibold mb-2">Tell us about your journey</h3>
@@ -373,6 +420,58 @@ export const OnboardingFlow = ({ onComplete }: OnboardingFlowProps) => {
             </div>
           )}
 
+          {/* Step 6: App Guide & Next Steps */}
+          {currentStep === 6 && (
+            <div className="space-y-6 animate-slide-up">
+              <div className="text-center">
+                <div className="p-4 rounded-full bg-success/10 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                  <Award className="h-8 w-8 text-success" />
+                </div>
+                <h3 className="text-xl font-semibold mb-2">You're All Set! 🎉</h3>
+                <p className="text-sm text-muted-foreground">Here's how to make the most of Elevare</p>
+              </div>
+
+              <div className="space-y-4">
+                <div className="p-4 border border-primary/20 rounded-lg">
+                  <div className="flex items-center gap-3 mb-2">
+                    <Home className="h-5 w-5 text-primary" />
+                    <h4 className="font-semibold">Dashboard</h4>
+                  </div>
+                  <p className="text-sm text-muted-foreground">Track your streaks, view progress, and stay motivated with daily stats</p>
+                </div>
+
+                <div className="p-4 border border-secondary/20 rounded-lg">
+                  <div className="flex items-center gap-3 mb-2">
+                    <CheckCircle className="h-5 w-5 text-secondary" />
+                    <h4 className="font-semibold">Daily Check-ins</h4>
+                  </div>
+                  <p className="text-sm text-muted-foreground">Complete daily check-ins to build your streak and track your mood</p>
+                </div>
+
+                <div className="p-4 border border-success/20 rounded-lg">
+                  <div className="flex items-center gap-3 mb-2">
+                    <MessageCircle className="h-5 w-5 text-success" />
+                    <h4 className="font-semibold">AI Coach Chat</h4>
+                  </div>
+                  <p className="text-sm text-muted-foreground">Get instant support, motivation, and personalized advice anytime</p>
+                </div>
+
+                <div className="p-4 border border-warning/20 rounded-lg">
+                  <div className="flex items-center gap-3 mb-2">
+                    <Calendar className="h-5 w-5 text-warning" />
+                    <h4 className="font-semibold">Goals & Calendar</h4>
+                  </div>
+                  <p className="text-sm text-muted-foreground">Plan your activities and track your progress over time</p>
+                </div>
+              </div>
+
+              <div className="p-4 bg-gradient-primary text-white rounded-lg text-center">
+                <p className="text-sm font-medium mb-2">🚀 Pro Tip</p>
+                <p className="text-xs opacity-90">Start with just one small action today. Consistency beats perfection every time!</p>
+              </div>
+            </div>
+          )}
+
           {/* Navigation */}
           <div className="flex justify-between pt-4">
             <Button
@@ -390,7 +489,8 @@ export const OnboardingFlow = ({ onComplete }: OnboardingFlowProps) => {
               disabled={!canProceed() || isSubmitting}
               className="flex items-center gap-2 gradient-primary shadow-primary text-white"
             >
-              {isSubmitting ? 'Saving...' : currentStep === totalSteps ? 'Complete Setup' : 'Next'}
+              {isSubmitting ? 'Saving...' : currentStep === totalSteps ? 'Start My Journey!' : 
+               currentStep === 1 ? "Let's Get Started" : 'Next'}
               <ArrowRight className="h-4 w-4" />
             </Button>
           </div>
