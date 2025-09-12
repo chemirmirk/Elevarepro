@@ -203,28 +203,28 @@ All colors MUST be HSL format.
   /* Interactive gradient buttons with hover effects */
   .btn-gradient {
     background: var(--gradient-primary);
-    color: #000000;
+    color: hsl(var(--primary-foreground));
     font-weight: bold;
     transition: all 0.3s ease;
   }
   
   .btn-gradient:hover {
     background: var(--gradient-hover);
-    color: #000000;
+    color: hsl(var(--primary-foreground));
     transform: translateY(-1px);
     box-shadow: var(--shadow-primary);
   }
   
   .btn-secondary-gradient {
     background: var(--gradient-secondary);
-    color: #000000;
+    color: hsl(var(--secondary-foreground));
     font-weight: bold;
     transition: all 0.3s ease;
   }
   
   .btn-secondary-gradient:hover {
     background: var(--gradient-hover);
-    color: #000000;
+    color: hsl(var(--secondary-foreground));
     transform: translateY(-1px);
     box-shadow: var(--shadow-progress);
   }
