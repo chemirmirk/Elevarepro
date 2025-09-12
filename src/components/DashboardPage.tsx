@@ -121,15 +121,15 @@ export const DashboardPage = () => {
   };
 
   return (
-    <div className="p-4 pb-24 space-y-4 max-w-md mx-auto">
-      {/* Welcome Header */}
-      <div className="text-center py-6">
-        <h1 className="text-2xl font-bold mb-2">Welcome back! 👋</h1>
-        <p className="text-muted-foreground">Keep up the great work on your journey</p>
+    <div className="p-6 pb-24 space-y-6 max-w-2xl mx-auto">
+      {/* Modern welcome header */}
+      <div className="text-center py-8 px-4">
+        <h1 className="text-3xl font-bold text-gradient mb-3">Welcome back! 👋</h1>
+        <p className="text-muted-foreground text-lg">Keep up the great work on your journey</p>
       </div>
 
-      {/* Streak Card */}
-      <Card className="gradient-primary text-white shadow-primary animate-slide-up">
+      {/* Modern streak card */}
+      <Card className="gradient-primary text-white shadow-large hover-lift animate-slide-up rounded-2xl overflow-hidden">
         <CardContent className="p-6">
           <div className="flex items-center justify-between">
             <div>
@@ -155,48 +155,48 @@ export const DashboardPage = () => {
         </CardContent>
       </Card>
 
-      {/* Quick Stats */}
-      <div className="grid grid-cols-2 gap-4">
-        <Card className="shadow-card">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-success/10 rounded-lg">
-                <Target className="h-5 w-5 text-success" />
+      {/* Modern quick stats */}
+      <div className="grid grid-cols-2 gap-6">
+        <Card className="shadow-medium hover-lift rounded-2xl">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-success/10 rounded-xl">
+                <Target className="h-6 w-6 text-success" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">This Week</p>
-                <p className="text-lg font-semibold">{completedThisWeek}/{weeklyGoal}</p>
+                <p className="text-sm text-muted-foreground font-medium">This Week</p>
+                <p className="text-2xl font-bold">{completedThisWeek}/{weeklyGoal}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="shadow-card">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-secondary/10 rounded-lg">
-                <TrendingUp className="h-5 w-5 text-secondary" />
+        <Card className="shadow-medium hover-lift rounded-2xl">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-secondary/10 rounded-xl">
+                <TrendingUp className="h-6 w-6 text-secondary" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Progress</p>
-                <p className="text-lg font-semibold">{Math.round(progressPercentage)}%</p>
+                <p className="text-sm text-muted-foreground font-medium">Progress</p>
+                <p className="text-2xl font-bold">{Math.round(progressPercentage)}%</p>
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Goals Notifications */}
-      <GoalNotifications className="shadow-card" />
+      {/* Modern notifications and goals */}
+      <GoalNotifications className="shadow-medium hover-lift rounded-2xl" />
+      <GoalsDashboard className="shadow-medium hover-lift rounded-2xl" />
 
-      {/* Goals Dashboard */}
-      <GoalsDashboard className="shadow-card" />
-
-      {/* Weekly Progress */}
-      <Card className="shadow-card">
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <Calendar className="h-5 w-5 text-primary" />
+      {/* Modern weekly progress */}
+      <Card className="shadow-medium hover-lift rounded-2xl">
+        <CardHeader className="pb-4">
+          <CardTitle className="flex items-center gap-3 text-xl font-bold">
+            <div className="p-2 bg-primary/10 rounded-xl">
+              <Calendar className="h-6 w-6 text-primary" />
+            </div>
             Weekly Progress
           </CardTitle>
         </CardHeader>
@@ -214,11 +214,13 @@ export const DashboardPage = () => {
         </CardContent>
       </Card>
 
-      {/* Today's Goals */}
-      <Card className="shadow-card">
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <Clock className="h-5 w-5 text-warning" />
+      {/* Modern today's goals */}
+      <Card className="shadow-medium hover-lift rounded-2xl">
+        <CardHeader className="pb-4">
+          <CardTitle className="flex items-center gap-3 text-xl font-bold">
+            <div className="p-2 bg-warning/10 rounded-xl">
+              <Clock className="h-6 w-6 text-warning" />
+            </div>
             Today's Goals
           </CardTitle>
         </CardHeader>
@@ -252,11 +254,13 @@ export const DashboardPage = () => {
         </CardContent>
       </Card>
 
-      {/* Achievements */}
-      <Card className="shadow-card">
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <Award className="h-5 w-5 text-warning" />
+      {/* Modern achievements */}
+      <Card className="shadow-medium hover-lift rounded-2xl">
+        <CardHeader className="pb-4">
+          <CardTitle className="flex items-center gap-3 text-xl font-bold">
+            <div className="p-2 bg-warning/10 rounded-xl">
+              <Award className="h-6 w-6 text-warning" />
+            </div>
             Recent Achievements
           </CardTitle>
         </CardHeader>
@@ -284,12 +288,12 @@ export const DashboardPage = () => {
         </CardContent>
       </Card>
 
-      {/* Quick Actions */}
-      <div className="grid grid-cols-2 gap-4">
-        <Button className="h-12 gradient-primary shadow-primary text-white">
+      {/* Modern quick actions */}
+      <div className="grid grid-cols-2 gap-6 pt-4">
+        <Button className="h-14 gradient-primary shadow-large text-white rounded-2xl hover-lift font-semibold">
           Start Check-in
         </Button>
-        <Button variant="gradient" className="h-12">
+        <Button variant="gradient" className="h-14 rounded-2xl hover-lift font-semibold">
           View Calendar
         </Button>
       </div>

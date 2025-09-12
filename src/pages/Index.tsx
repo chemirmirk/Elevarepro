@@ -166,8 +166,9 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* User info header */}
-      <div className="flex justify-between items-center p-4 border-b bg-card">
+      {/* Modern header with glassmorphism */}
+      <div className="sticky top-0 z-50 glass-card border-b shadow-soft">
+        <div className="flex justify-between items-center p-4 max-w-screen-xl mx-auto">
         <div className="flex items-center gap-3">
           <Dialog open={profileDialogOpen} onOpenChange={setProfileDialogOpen}>
             <DialogTrigger asChild>
@@ -211,39 +212,44 @@ const Index = () => {
               </div>
             </DialogContent>
           </Dialog>
-          <span className="text-sm text-muted-foreground">
-            Welcome, {profile?.name || user?.user_metadata?.name || user?.email}
-          </span>
+          <div>
+            <span className="text-sm font-medium text-foreground">
+              {profile?.name || user?.user_metadata?.name || user?.email}
+            </span>
+            <p className="text-xs text-muted-foreground">Welcome back!</p>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          {/* Desktop buttons with text */}
-          <Button
-            variant={activeTab === 'calendar' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setActiveTab('calendar')}
-            className="hidden md:flex"
-          >
-            <Calendar className="h-4 w-4 mr-2" />
-            Calendar
-          </Button>
-          <Button
-            variant={activeTab === 'workout' ? 'gradient' : 'outline'}
-            size="sm"
-            onClick={() => setActiveTab('workout')}
-            className="hidden md:flex"
-          >
-            <Dumbbell className="h-4 w-4 mr-2" />
-            Workout
-          </Button>
-          <Button
-            variant={activeTab === 'reminders' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setActiveTab('reminders')}
-            className="hidden md:flex"
-          >
-            <Bell className="h-4 w-4 mr-2" />
-            Reminders
-          </Button>
+        <div className="flex items-center gap-3">
+          {/* Modern desktop navigation */}
+          <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-muted/30 rounded-full">
+            <Button
+              variant={activeTab === 'calendar' ? 'gradient' : 'ghost'}
+              size="sm"
+              onClick={() => setActiveTab('calendar')}
+              className="rounded-full hover-lift"
+            >
+              <Calendar className="h-4 w-4 mr-2" />
+              Calendar
+            </Button>
+            <Button
+              variant={activeTab === 'workout' ? 'gradient' : 'ghost'}
+              size="sm"
+              onClick={() => setActiveTab('workout')}
+              className="rounded-full hover-lift"
+            >
+              <Dumbbell className="h-4 w-4 mr-2" />
+              Workout
+            </Button>
+            <Button
+              variant={activeTab === 'reminders' ? 'gradient' : 'ghost'}
+              size="sm"
+              onClick={() => setActiveTab('reminders')}
+              className="rounded-full hover-lift"
+            >
+              <Bell className="h-4 w-4 mr-2" />
+              Reminders
+            </Button>
+          </div>
           
           {/* Mobile icon-only buttons */}
           <Button
@@ -271,10 +277,11 @@ const Index = () => {
             <Bell className="h-4 w-4" />
           </Button>
           
-          <Button variant="outline" size="sm" onClick={signOut}>
+          <Button variant="ghost" size="sm" onClick={signOut} className="rounded-full hover-lift">
             <LogOut className="h-4 w-4 mr-2" />
             <span className="hidden sm:inline">Sign Out</span>
           </Button>
+        </div>
         </div>
       </div>
       {renderActiveTab()}
