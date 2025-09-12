@@ -165,13 +165,13 @@ export const OnboardingFlow = ({ onComplete }: OnboardingFlowProps) => {
           </div>
         </CardHeader>
 
-        <CardContent className="space-y-6">
+        <CardContent className="space-y-4">
           {/* Step 1: Welcome & Introduction */}
           {currentStep === 1 && (
-            <div className="space-y-6 animate-slide-up text-center">
-              <div className="p-6 rounded-2xl bg-gradient-primary text-white">
-                <Sparkles className="h-12 w-12 mx-auto mb-4 animate-bounce-gentle" />
-                <h3 className="text-xl font-bold mb-2">Welcome to Elevare!</h3>
+            <div className="space-y-4 animate-slide-up text-center">
+              <div className="p-4 rounded-2xl bg-gradient-primary text-white">
+                <Sparkles className="h-10 w-10 mx-auto mb-3 animate-bounce-gentle" />
+                <h3 className="text-lg font-bold mb-2">Welcome to Elevare!</h3>
                 <p className="text-sm opacity-90">Your personal transformation companion</p>
               </div>
               
