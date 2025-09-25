@@ -209,7 +209,7 @@ const Index = () => {
             <Bell className="h-4 w-4" />
           </Button>
           
-          <Button variant="outline" size="sm" onClick={signOut} className="rounded-full hover-lift border-primary/30 hover:border-primary/50">
+          <Button variant="ghost" size="sm" onClick={signOut} className="rounded-full hover-lift">
             <LogOut className="h-4 w-4 mr-2" />
             <span className="hidden sm:inline">Sign Out</span>
           </Button>
